@@ -2,11 +2,14 @@ import { useState } from "react";
 import { format, addDays, startOfWeek, isWithinInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { useGuardContext } from "../context";
-import { Plus } from "lucide-react";
+import { Plus, Trash } from "lucide-react";
 import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+
+import { LoadingSpinner } from "./LoadingSpinner";
 
 export function MainCalendarView() {
-  const { members, guards, addMember } = useGuardContext();
+  const { members, guards, isLoading, addMember, removeGuard, removeMember } = useGuardContext();
   const [currentDate] = useState(new Date());
 
   // Generate 4 weeks starting from the current week
@@ -30,6 +33,10 @@ export function MainCalendarView() {
     );
   };
 
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex h-[calc(100vh-100px)] overflow-hidden">
       {/* Left Panel: Member List */}
@@ -46,11 +53,27 @@ export function MainCalendarView() {
         </div>
         <div className="flex-1 overflow-y-auto py-2">
           {members.map((member) => (
-            <div key={member.id} className="flex items-center gap-3 px-4 h-14 hover:bg-white/5 transition-colors cursor-pointer border-b border-transparent">
-              <div className="w-10 h-10 rounded-full bg-indigo-600/80 border border-indigo-500 flex items-center justify-center text-sm font-medium text-white shadow-sm">
-                {member.name.charAt(0)}
+            <div key={member.id} className="flex items-center justify-between px-4 h-14 hover:bg-white/5 transition-colors cursor-pointer border-b border-transparent group">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-indigo-600/80 border border-indigo-500 flex items-center justify-center text-sm font-medium text-white shadow-sm">
+                  {member.name.charAt(0)}
+                </div>
+                <span className="text-sm font-medium text-gray-200">{member.name}</span>
               </div>
-              <span className="text-sm font-medium text-gray-200">{member.name}</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 hover:bg-red-900/20 transition-all h-8 w-8"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`¿Estás seguro de eliminar a ${member.name}? Se eliminarán todas sus guardias.`)) {
+                    removeMember(member.id);
+                  }
+                }}
+                title="Eliminar miembro"
+              >
+                <Trash className="h-4 w-4" />
+              </Button>
             </div>
           ))}
         </div>
@@ -88,29 +111,58 @@ export function MainCalendarView() {
                   <div key={i} className="flex border-r border-border/20 last:border-0 h-full py-2 px-1">
                     {week.map((day, j) => {
                       const guard = getGuardForMemberAndDay(member.id, day);
+
+                      const cellContent = (
+                        <div
+                          className={`w-full h-full rounded-md flex items-center justify-center text-xs font-medium transition-all ${
+                            guard
+                              ? "text-white shadow-sm ring-1 ring-white/10"
+                              : "bg-[#1e2130] text-gray-500" // Fondo oscuro neutro
+                          }`}
+                          style={
+                            guard
+                              ? {
+                                  backgroundColor:
+                                    guard.type === "Guardia Matutina"
+                                      ? "#F97316"
+                                      : "#A855F7",
+                                }
+                              : {}
+                          }
+                          title={guard ? `${guard.type} - ${member.name}` : undefined}
+                        >
+                           {format(day, "d")}
+                        </div>
+                      );
+
                       return (
                         <div
                           key={j}
                           className="w-[3.5rem] flex items-center justify-center px-0.5"
                         >
-                          <div
-                            className={`w-full h-full rounded-md flex items-center justify-center text-xs font-medium transition-all ${
-                              guard
-                                ? guard.type === "Guardia Matutina"
-                                  ? "bg-indigo-600/90 text-white shadow-sm ring-1 ring-indigo-500/50" // Matutina color
-                                  : "bg-slate-500/90 text-white shadow-sm ring-1 ring-slate-400/50" // Vespertina color
-                                : "bg-[#1e2130]/40 text-gray-500 hover:bg-[#25293c]/60" // Default cell
-                            }`}
-                            title={guard ? `${guard.type} - ${member.name}` : undefined}
-                          >
-                             {guard ? (
-                               // If it's the start of the guard or monday, maybe show an icon, otherwise just the number or solid color
-                               // For simplicity, just showing the day number inside the colored block
-                               format(day, "d")
-                             ) : (
-                               format(day, "d")
-                             )}
-                          </div>
+                          {guard ? (
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <button className="w-full h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/20 rounded-md">
+                                  {cellContent}
+                                </button>
+                              </PopoverTrigger>
+                              <PopoverContent className="w-auto p-3 bg-[#13151f] border-border text-white">
+                                <p className="text-sm font-medium mb-2">{guard.type}</p>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => removeGuard(guard.id)}
+                                  className="w-full bg-red-600 hover:bg-red-700"
+                                >
+                                  <Trash className="w-4 h-4 mr-2" />
+                                  Eliminar Asignación
+                                </Button>
+                              </PopoverContent>
+                            </Popover>
+                          ) : (
+                            cellContent
+                          )}
                         </div>
                       );
                     })}

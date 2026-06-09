@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format, isSameWeek, startOfWeek } from "date-fns";
+import { format, isSameWeek, eachWeekOfInterval } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { useGuardContext } from "../context";
@@ -43,8 +43,8 @@ const formSchema = z.object({
   type: z.enum(["Guardia Matutina", "Guardia Vespertina"] as const),
   dateRange: z.object({
     from: z.date({ message: "Fecha inicial requerida" }),
-    to: z.date({ message: "Fecha final requerida" }),
-  }),
+    to: z.date().optional(),
+  }).refine((data) => data.from, { message: "Selecciona un rango de fechas" }),
 });
 
 export function AssignGuardModal() {
@@ -63,23 +63,36 @@ export function AssignGuardModal() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     setConflictError(null);
     const { from, to } = values.dateRange;
+    const finalTo = to || from; // Si no hay fecha final (doble click no hecho), se toma un solo dia
 
-    // Validation: 1 member per week for Matutina, 1 for Vespertina
-    // Here we check if ANY guard of the SAME TYPE overlaps with the requested weeks
-    // We simplify by checking if the start date falls into a week that already has that type
-    const requestedWeek = startOfWeek(from, { weekStartsOn: 1 });
+    // Validacion: Solo 1 miembro asignado por semana para "Guardia Matutina" y 1 para "Guardia Vespertina".
+    // Obtenemos todas las semanas que abarca el rango solicitado.
+    const requestedWeeks = eachWeekOfInterval({ start: from, end: finalTo }, { weekStartsOn: 1 });
 
-    const hasConflict = guards.some((guard) => {
-      const guardWeek = startOfWeek(guard.startDate, { weekStartsOn: 1 });
-      return (
-        guard.type === values.type &&
-        isSameWeek(requestedWeek, guardWeek, { weekStartsOn: 1 })
-      );
-    });
+    let foundConflict = false;
 
-    if (hasConflict) {
+    // Para cada guardia existente
+    for (const guard of guards) {
+      // Verificamos si es del mismo tipo
+      if (guard.type === values.type) {
+        // Obtenemos las semanas que abarca esta guardia
+        const guardWeeks = eachWeekOfInterval({ start: guard.startDate, end: guard.endDate }, { weekStartsOn: 1 });
+
+        // Si hay intersección entre las semanas solicitadas y las semanas de la guardia existente, es un conflicto
+        const overlaps = requestedWeeks.some(rw =>
+          guardWeeks.some(gw => isSameWeek(rw, gw, { weekStartsOn: 1 }))
+        );
+
+        if (overlaps) {
+          foundConflict = true;
+          break;
+        }
+      }
+    }
+
+    if (foundConflict) {
       setConflictError(
-        `Ya existe una asignación de ${values.type} para esta semana.`
+        `Ya existe una asignación de ${values.type} para alguna de las semanas seleccionadas.`
       );
       return;
     }
@@ -88,11 +101,20 @@ export function AssignGuardModal() {
       memberId: values.memberId,
       type: values.type,
       startDate: from,
-      endDate: to,
+      endDate: finalTo,
     });
     setOpen(false);
     form.reset();
   }
+
+  // Lógica customizada para el rango de fechas para evitar que se "trabe"
+  // React Day Picker mode="range" puede ser molesto si se quiere reiniciar.
+  // Permitiendo setear onChange con min=1 dia
+  const handleDateSelect = (newDateRange: any, onChange: (val: any) => void) => {
+    // Si solo viene 'from', y 'to' es undefined (significa que el usuario clickeo un nuevo dia inicial)
+    onChange(newDateRange);
+    setConflictError(null); // Clear error on change
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -208,7 +230,7 @@ export function AssignGuardModal() {
                           from: field.value?.from,
                           to: field.value?.to,
                         }}
-                        onSelect={field.onChange}
+                        onSelect={(range) => handleDateSelect(range, field.onChange)}
                         numberOfMonths={2}
                       />
                     </PopoverContent>

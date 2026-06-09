@@ -7,6 +7,15 @@ export interface Member {
 
 export interface GuardAssignment {
   id: string;
+  member_id: string;
+  type: GuardType;
+  start_date: string;
+  end_date: string;
+}
+
+// For frontend components that still use camelCase and Date objects
+export interface GuardAssignmentUI {
+  id: string;
   memberId: string;
   type: GuardType;
   startDate: Date;
