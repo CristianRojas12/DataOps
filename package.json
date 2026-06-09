@@ -26,6 +26,7 @@
     "react-day-picker": "^9.4.3",
     "react-dom": "^19.2.6",
     "react-hook-form": "^7.78.0",
+    "react-router-dom": "^7.17.0",
     "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   },
