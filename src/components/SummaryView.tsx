@@ -1,14 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
 import { useGuardContext } from "../context";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { LoadingSpinner } from "./LoadingSpinner";
 
 export function SummaryView() {
-  const { members, guards } = useGuardContext();
-  const [selectedMemberId, setSelectedMemberId] = useState<string>(members[0]?.id || "");
+  const { members, guards, isLoading } = useGuardContext();
+  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [currentYear] = useState(new Date().getFullYear());
+
+  useEffect(() => {
+    if (members.length > 0 && !selectedMemberId) {
+      setSelectedMemberId(members[0].id);
+    }
+  }, [members, selectedMemberId]);
 
   const selectedMember = members.find((m) => m.id === selectedMemberId);
   const memberGuards = guards.filter((g) => g.memberId === selectedMemberId);
@@ -33,10 +40,14 @@ export function SummaryView() {
     );
   };
 
+  if (isLoading) {
+    return <LoadingSpinner />;
+  }
+
   return (
     <div className="flex h-[calc(100vh-100px)] gap-6 p-6 overflow-hidden">
-      {/* Left Panel: Summary Stats */}
-      <div className="w-64 flex-shrink-0 space-y-6 overflow-y-auto pr-2">
+      {/* Left Panel: Summary Stats (Fixed/Sticky) */}
+      <div className="w-64 flex-shrink-0 space-y-6 sticky top-0 self-start">
         <div>
           <label className="text-sm text-muted-foreground mb-2 block">Miembro</label>
           <Select value={selectedMemberId} onValueChange={setSelectedMemberId}>
@@ -60,14 +71,14 @@ export function SummaryView() {
           <CardContent className="space-y-4">
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-orange-500"></span>
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "#F97316" }}></span>
                 Matutina
               </span>
               <span className="font-semibold">{matutinaDays} Días</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-muted-foreground flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-purple-500"></span>
+                <span className="w-3 h-3 rounded-full" style={{ backgroundColor: "#A855F7" }}></span>
                 Vespertina
               </span>
               <span className="font-semibold">{vespertinaDays} Días</span>
@@ -80,10 +91,10 @@ export function SummaryView() {
         </Card>
       </div>
 
-      {/* Right Panel: Month Cards Grid */}
+      {/* Right Panel: Month Cards Grid (Scrollable) */}
       <div className="flex-1 overflow-y-auto pr-4 pb-12">
         <h2 className="text-xl font-medium mb-6">
-          Calendario de {selectedMember?.name}
+          Calendario de {selectedMember?.name || "..."}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {months.map((month) => {
@@ -118,11 +129,19 @@ export function SummaryView() {
                           key={i}
                           className={`h-8 flex items-center justify-center rounded-md ${
                             guard
-                              ? guard.type === "Guardia Matutina"
-                                ? "bg-orange-500 text-white"
-                                : "bg-purple-500 text-white"
+                              ? "text-white"
                               : "text-muted-foreground hover:bg-white/5"
                           }`}
+                          style={
+                            guard
+                              ? {
+                                  backgroundColor:
+                                    guard.type === "Guardia Matutina"
+                                      ? "#F97316"
+                                      : "#A855F7",
+                                }
+                              : {}
+                          }
                         >
                           {format(day, "d")}
                         </div>
