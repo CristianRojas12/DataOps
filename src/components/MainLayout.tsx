@@ -3,6 +3,7 @@ import { MainCalendarView } from "./MainCalendarView";
 import { SummaryView } from "./SummaryView";
 import { AssignGuardModal } from "./AssignGuardModal";
 import { CriticalProductsView } from "./CriticalProductsView";
+import { CriticalProductsControls } from "./CriticalProductsControls";
 import { CalendarDays, LayoutDashboard, Settings, LogOut, Package } from "lucide-react";
 
 import { useGuardContext } from "../context";
@@ -69,11 +70,13 @@ export function MainLayout() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
-         {/* Top Header - Strict UI Rule: Standardized central area for Assign Guard button */}
+         {/* Top Header - Strict UI Rule: Standardized central area for Action buttons */}
          <div className="h-16 flex items-center justify-end px-6 border-b border-border shrink-0 bg-[#13151f]">
-            {/* The rule is to show Assign Guard centrally on the right, but hidden if tab is "productos". Admin only. */}
             {activeTab !== "productos" && session?.role === 'admin' && (
               <AssignGuardModal />
+            )}
+            {activeTab === "productos" && (
+              <CriticalProductsControls />
             )}
          </div>
 

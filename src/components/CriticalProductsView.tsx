@@ -7,6 +7,7 @@ import { ProductFormModal } from "./ProductFormModal";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { useGuardContext } from "../context";
+import { useUiStore } from "../store";
 
 function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -18,12 +19,9 @@ export function CriticalProductsView() {
   const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
   const { session } = useGuardContext();
   const isAdmin = session?.role === 'admin';
+  const { productsAlertsEnabled, productsAddModalOpen, setProductsAddModalOpen } = useUiStore();
 
   const [now, setNow] = useState(new Date());
-  const [alertsEnabled, setAlertsEnabled] = useState(
-    () => localStorage.getItem("pc_alerts") !== "false"
-  );
-  const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<CriticalProduct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
@@ -40,7 +38,7 @@ export function CriticalProductsView() {
     }
   }, []);
 
-  useProductNotifications(products, alertsEnabled);
+  useProductNotifications(products, productsAlertsEnabled);
 
   const tasks = useMemo<ProductTask[]>(() => {
     const list: ProductTask[] = [];
@@ -55,16 +53,7 @@ export function CriticalProductsView() {
 
   const cur = hm(now);
 
-  const toggleAlerts = (checked: boolean) => {
-    setAlertsEnabled(checked);
-    localStorage.setItem("pc_alerts", checked ? "true" : "false");
-    if (checked && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
-    }
-  };
-
-  const openAdd = () => { setEditing(null); setModalOpen(true); };
-  const openEdit = (p: CriticalProduct) => { setEditing(p); setModalOpen(true); };
+  const openEdit = (p: CriticalProduct) => { setEditing(p); setProductsAddModalOpen(true); };
 
   const copyPbi = async (url: string, key: string) => {
     try {
@@ -83,23 +72,6 @@ export function CriticalProductsView() {
       {/* Header propio de la pestaña */}
       <div className="flex items-center justify-between px-6 py-4 shrink-0">
         <h2 className="text-xl font-medium">Monitoreo de Productos Críticos</h2>
-        <div className="flex items-center gap-4">
-          <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={alertsEnabled}
-              onChange={(e) => toggleAlerts(e.target.checked)}
-              className="w-4 h-4 accent-indigo-500"
-            />
-            Alertas activas
-          </label>
-          <span className="text-lg tabular-nums">{hm(now)}</span>
-          {isAdmin && (
-             <Button onClick={openAdd} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
-               <span className="text-lg leading-none mb-[2px]">+</span> Agregar producto
-             </Button>
-          )}
-        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-12">
@@ -206,7 +178,14 @@ export function CriticalProductsView() {
         )}
       </div>
 
-      <ProductFormModal open={modalOpen} onOpenChange={setModalOpen} product={editing} />
+      <ProductFormModal
+         open={productsAddModalOpen}
+         onOpenChange={(open) => {
+            setProductsAddModalOpen(open);
+            if (!open) setEditing(null);
+         }}
+         product={editing}
+      />
     </div>
   );
 }
