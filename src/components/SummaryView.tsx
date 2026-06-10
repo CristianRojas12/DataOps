@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 type FilterMode = "currentMonth" | "ytd";
 
 export function SummaryView() {
-  const { members, guards, holidays, isLoading } = useGuardContext();
+  const { members, guards, calendarDim, isLoading } = useGuardContext();
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [filterMode, setFilterMode] = useState<FilterMode>("currentMonth");
   const [currentYear] = useState(new Date().getFullYear());
@@ -39,9 +39,10 @@ export function SummaryView() {
   const months = Array.from({ length: 12 }).map((_, i) => new Date(currentYear, i, 1));
   const currentMonthDate = months[currentMonthIndex];
 
-  // Helper to check if a day is a holiday
-  const isHoliday = (date: Date) => {
-    return holidays.some(h => h.getTime() === date.getTime());
+  // Helper to check if a day is a holiday from calendarDim
+  const getDayDim = (date: Date) => {
+    const key = format(date, "yyyy-MM-dd");
+    return calendarDim.find(r => r.date_key === key);
   };
 
   // Helper to check if a date is the last Saturday of its month
@@ -79,14 +80,17 @@ export function SummaryView() {
 
       // Calculate weekend logic
       filteredDays.forEach(d => {
-        if (isSunday(d)) {
-          weekendDays += 1;
-        } else if (isLastSaturdayOfMonth(d) && g.type === "Guardia Vespertina") {
-          weekendDays += 1;
+        const dim = getDayDim(d);
+        if (dim?.is_holiday) {
+          holidayCount += 1;
         }
 
-        if (isHoliday(d)) {
-          holidayCount += 1;
+        if (dim?.is_weekend) {
+           if (isSunday(d)) {
+             weekendDays += 1;
+           } else if (isLastSaturdayOfMonth(d) && g.type === "Guardia Vespertina") {
+             weekendDays += 1;
+           }
         }
       });
     });
@@ -259,16 +263,17 @@ export function SummaryView() {
                           isWithinInterval(day, { start: g.startDate, end: g.endDate })
                         );
 
-                        const isHol = isHoliday(day);
+                        const dim = getDayDim(day);
+                        const isHol = dim?.is_holiday ?? false;
 
                         return (
                           <div
                             key={i}
-                            className={`h-8 flex items-center justify-center rounded-md ${
+                            className={`h-8 flex items-center justify-center rounded-md relative ${
                               guard
                                 ? "text-white"
                                 : "text-muted-foreground hover:bg-white/5"
-                            } ${isHol && !guard ? 'ring-1 ring-amber-500/50 text-amber-200 bg-amber-500/10' : ''} ${isHol && guard ? 'ring-2 ring-white' : ''}`}
+                            } ${isHol && !guard ? 'text-amber-200 bg-amber-500/10' : ''} ${isHol && guard ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#13151f]' : ''}`}
                             style={
                               guard
                                 ? {
@@ -279,9 +284,12 @@ export function SummaryView() {
                                   }
                                 : {}
                             }
-                            title={isHol ? "Feriado" : ""}
+                            title={isHol ? dim?.holiday_name || "Feriado" : ""}
                           >
                             {format(day, "d")}
+                            {isHol && !guard && (
+                               <span className="absolute top-1 right-1 w-1 h-1 bg-amber-500 rounded-full"></span>
+                            )}
                           </div>
                         );
                       })}

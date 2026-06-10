@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import type { Member, GuardAssignment, GuardAssignmentUI, UserSession, Role } from "./types";
+import type { Member, GuardAssignment, GuardAssignmentUI, UserSession, Role, DimCalendarRow } from "./types";
 import { supabase } from "./lib/supabase";
 import { parseISO, format } from "date-fns";
 import { LoginView } from "./components/LoginView";
@@ -8,7 +8,7 @@ import { LoadingSpinner } from "./components/LoadingSpinner";
 interface GuardContextType {
   members: Member[];
   guards: GuardAssignmentUI[];
-  holidays: Date[];
+  calendarDim: DimCalendarRow[];
   isLoading: boolean;
   session: UserSession;
   addMember: (name: string, role?: Role) => Promise<void>;
@@ -25,18 +25,17 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   const [guards, setGuards] = useState<GuardAssignmentUI[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<UserSession>({ user: null, role: 'user' });
-  const [holidays, setHolidays] = useState<Date[]>([]);
+  const [calendarDim, setCalendarDim] = useState<DimCalendarRow[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
 
-  useEffect(() => {
-    fetch(`https://nolaborables.com.ar/api/v2/feriados/${new Date().getFullYear()}`)
-      .then(res => res.json())
-      .then((data: any[]) => {
-        const parsedHolidays = data.map(h => new Date(new Date().getFullYear(), h.mes - 1, h.dia));
-        setHolidays(parsedHolidays);
-      })
-      .catch(err => console.error("Error fetching holidays:", err));
-  }, []);
+  const fetchCalendarDim = async () => {
+    const { data, error } = await supabase.from('dim_calendario').select('*').eq('year', new Date().getFullYear());
+    if (error) {
+      console.error("Error fetching dim_calendario:", error);
+      return [];
+    }
+    return data as DimCalendarRow[];
+  };
 
   const fetchMembers = async () => {
     const { data, error } = await supabase.from('members').select('*');
@@ -66,7 +65,9 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
 
   const loadInitialData = async () => {
     setIsLoading(true);
-    const [membersData, guardsData] = await Promise.all([fetchMembers(), fetchGuards()]);
+    const [membersData, guardsData, calendarData] = await Promise.all([fetchMembers(), fetchGuards(), fetchCalendarDim()]);
+
+    setCalendarDim(calendarData);
 
     if (membersData.length === 0) {
       // Initialize default members if empty (for example purposes or initial load)
@@ -220,7 +221,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <GuardContext.Provider value={{ members, guards, holidays, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
+    <GuardContext.Provider value={{ members, guards, calendarDim, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
       {children}
     </GuardContext.Provider>
   );

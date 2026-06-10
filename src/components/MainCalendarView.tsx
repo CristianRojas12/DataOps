@@ -9,7 +9,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 
 export function MainCalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { members, guards, holidays, removeGuard, isLoading, session } = useGuardContext();
+  const { members, guards, calendarDim, removeGuard, isLoading, session } = useGuardContext();
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -27,8 +27,9 @@ export function MainCalendarView() {
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
 
-  const isHoliday = (date: Date) => {
-    return holidays.some(h => h.getTime() === date.getTime());
+  const getDayDim = (date: Date) => {
+    const key = format(date, "yyyy-MM-dd");
+    return calendarDim.find(r => r.date_key === key);
   };
 
   return (
@@ -87,9 +88,11 @@ export function MainCalendarView() {
 
                {/* Days Headers */}
                {monthDays.map((day, i) => {
-                  const isHol = isHoliday(day);
+                  const dim = getDayDim(day);
+                  const isHol = dim?.is_holiday ?? false;
                   return (
-                  <div key={`header-${i}`} className={`w-12 shrink-0 flex flex-col items-center justify-center py-2 border-r border-border ${isHol ? 'bg-amber-500/10 text-amber-200 ring-1 ring-amber-500/50' : 'bg-[#13151f]'}`} title={isHol ? "Feriado" : ""}>
+                  <div key={`header-${i}`} className={`w-12 shrink-0 flex flex-col items-center justify-center py-2 border-r border-border relative ${isHol ? 'bg-amber-500/10 text-amber-200' : 'bg-[#13151f]'}`} title={isHol ? dim?.holiday_name || "Feriado" : ""}>
+                     {isHol && <span className="absolute top-1 right-1 w-1 h-1 bg-amber-500 rounded-full"></span>}
                      <span className={`text-[10px] uppercase ${isHol ? 'text-amber-200' : 'text-muted-foreground'}`}>{format(day, "EEEEEE", { locale: es })}</span>
                      <span className={`text-sm font-medium ${isHol ? 'text-amber-400' : ''}`}>{format(day, "d")}</span>
                   </div>

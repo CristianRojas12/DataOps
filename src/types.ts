@@ -30,3 +30,14 @@ export interface UserSession {
   user: any | null; // Supabase User
   role: Role;
 }
+
+export interface DimCalendarRow {
+  date_key: string;
+  year: number;
+  month: number;
+  day: number;
+  day_of_week: number;
+  is_weekend: boolean;
+  is_holiday: boolean;
+  holiday_name: string | null;
+}
