@@ -1,0 +1,112 @@
+--- src/context.tsx	2023-10-27
++++ src/context.tsx	2023-10-27
+@@ -8,6 +8,7 @@
+ interface GuardContextType {
+   members: Member[];
+   guards: GuardAssignmentUI[];
++  holidays: Date[];
+   isLoading: boolean;
+   session: UserSession;
+   addMember: (name: string, role?: Role) => Promise<void>;
+@@ -23,6 +24,7 @@
+   const [guards, setGuards] = useState<GuardAssignmentUI[]>([]);
+   const [isLoading, setIsLoading] = useState(true);
+   const [session, setSession] = useState<UserSession>({ user: null, role: 'user' });
++  const [holidays, setHolidays] = useState<Date[]>([]);
+   const [authLoading, setAuthLoading] = useState(true);
+
+   const fetchMembers = async () => {
+@@ -99,6 +101,15 @@
+     return () => subscription.unsubscribe();
+   }, []);
+
++  useEffect(() => {
++    fetch(`https://nolaborables.com.ar/api/v2/feriados/${new Date().getFullYear()}`)
++      .then(res => res.json())
++      .then((data: any[]) => {
++        const parsedHolidays = data.map(h => new Date(new Date().getFullYear(), h.mes - 1, h.dia));
++        setHolidays(parsedHolidays);
++      })
++      .catch(err => console.error("Error fetching holidays:", err));
++  }, []);
++
+   const addMember = async (name: string, role: Role = 'user') => {
+     if (session.role !== 'admin') return alert("Permiso denegado");
+     const { data, error } = await supabase
+@@ -165,7 +176,7 @@
+   }
+
+   return (
+-    <GuardContext.Provider value={{ members, guards, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
++    <GuardContext.Provider value={{ members, guards, holidays, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
+       {children}
+     </GuardContext.Provider>
+   );
+--- src/components/SummaryView.tsx	2023-10-27
++++ src/components/SummaryView.tsx	2023-10-27
+@@ -10,19 +10,10 @@
+
+ export function SummaryView() {
+-  const { members, guards, isLoading } = useGuardContext();
++  const { members, guards, holidays, isLoading } = useGuardContext();
+   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
+   const [filterMode, setFilterMode] = useState<FilterMode>("currentMonth");
+   const [currentYear] = useState(new Date().getFullYear());
+   const [currentMonthIndex] = useState(new Date().getMonth());
+   const monthRefs = useRef<(HTMLDivElement | null)[]>([]);
+-
+-  // Holidays state
+-  const [holidays, setHolidays] = useState<Date[]>([]);
+-
+-  useEffect(() => {
+-    // Fetch Argentina Holidays
+-    fetch(`https://nolaborables.com.ar/api/v2/feriados/${currentYear}`)
+-      .then(res => res.json())
+-      .then((data: any[]) => {
+-        const parsedHolidays = data.map(h => new Date(currentYear, h.mes - 1, h.dia));
+-        setHolidays(parsedHolidays);
+-      })
+-      .catch(err => console.error("Error fetching holidays:", err));
+-  }, [currentYear]);
+
+   useEffect(() => {
+--- src/components/MainCalendarView.tsx	2023-10-27
++++ src/components/MainCalendarView.tsx	2023-10-27
+@@ -10,7 +10,7 @@
+
+ export function MainCalendarView() {
+   const [currentDate, setCurrentDate] = useState(new Date());
+-  const { members, guards, removeGuard, isLoading, session } = useGuardContext();
++  const { members, guards, holidays, removeGuard, isLoading, session } = useGuardContext();
+
+   if (isLoading) {
+     return <LoadingSpinner />;
+@@ -23,6 +23,10 @@
+
+   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
++
++  const isHoliday = (date: Date) => {
++    return holidays.some(h => h.getTime() === date.getTime());
++  };
+
+   return (
+     <div className="flex flex-col h-full bg-[#0f111a] text-foreground p-6 overflow-hidden">
+@@ -75,10 +79,13 @@
+                ))}
+
+                {/* Days Headers */}
+-               {monthDays.map((day, i) => (
+-                  <div key={`header-${i}`} className="w-12 shrink-0 flex flex-col items-center justify-center py-2 border-r border-border bg-[#13151f]">
+-                     <span className="text-[10px] text-muted-foreground uppercase">{format(day, "EEEEEE", { locale: es })}</span>
+-                     <span className="text-sm font-medium">{format(day, "d")}</span>
++               {monthDays.map((day, i) => {
++                  const isHol = isHoliday(day);
++                  return (
++                  <div key={`header-${i}`} className={`w-12 shrink-0 flex flex-col items-center justify-center py-2 border-r border-border ${isHol ? 'bg-amber-500/10 text-amber-200 ring-1 ring-amber-500/50' : 'bg-[#13151f]'}`} title={isHol ? "Feriado" : ""}>
++                     <span className={`text-[10px] uppercase ${isHol ? 'text-amber-200' : 'text-muted-foreground'}`}>{format(day, "EEEEEE", { locale: es })}</span>
++                     <span className={`text-sm font-medium ${isHol ? 'text-amber-400' : ''}`}>{format(day, "d")}</span>
+                   </div>
+-               ))}
++               )})}
+             </div>
