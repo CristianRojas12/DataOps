@@ -1,200 +1,167 @@
 import { useState } from "react";
-import { format, addDays, startOfWeek, endOfWeek, isWithinInterval, subDays } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, startOfWeek } from "date-fns";
 import { es } from "date-fns/locale";
+import { ChevronLeft, ChevronRight, Search, Trash2 } from "lucide-react";
 import { useGuardContext } from "../context";
-import { Plus, Trash, ChevronLeft, ChevronRight } from "lucide-react";
-import { Button } from "./ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { LoadingSpinner } from "./LoadingSpinner";
 
+
 export function MainCalendarView() {
-  const { members, guards, isLoading, session, addMember, removeGuard, removeMember } = useGuardContext();
   const [currentDate, setCurrentDate] = useState(new Date());
-
-  // Navigation Logic
-  // The grid must strictly start on Monday and end on Sunday.
-  // We'll calculate a 4-week span starting from the Monday of the current week selected.
-  const handlePrevWeek = () => setCurrentDate(subDays(currentDate, 7));
-  const handleNextWeek = () => setCurrentDate(addDays(currentDate, 7));
-
-  const startDate = startOfWeek(currentDate, { weekStartsOn: 1 });
-  // Render exactly 4 weeks from startDate
-  const endDate = endOfWeek(addDays(startDate, 21), { weekStartsOn: 1 });
-
-  const weeks = Array.from({ length: 4 }).map((_, weekIndex) => {
-    return Array.from({ length: 7 }).map((_, dayIndex) => {
-      return addDays(startDate, weekIndex * 7 + dayIndex);
-    });
-  });
-
-  const handleAddMember = () => {
-    const name = prompt("Nombre del nuevo miembro:");
-    if (name) addMember(name);
-  };
-
-  const getGuardForMemberAndDay = (memberId: string, date: Date) => {
-    return guards.find(
-      (g) =>
-        g.memberId === memberId &&
-        isWithinInterval(date, { start: g.startDate, end: g.endDate })
-    );
-  };
+  const { members, guards, holidays, removeGuard, isLoading, session } = useGuardContext();
 
   if (isLoading) {
     return <LoadingSpinner />;
   }
 
+  // Set standard grid
+  const start = startOfMonth(currentDate);
+  const end = endOfMonth(currentDate);
+  const monthDays = eachDayOfInterval({ start, end });
+  const firstDayOfWeek = startOfWeek(start, { weekStartsOn: 1 });
+  const prefixDays = eachDayOfInterval({ start: firstDayOfWeek, end: start }).slice(0, -1);
+
+  // Rellenar para garantizar las celdas necesarias para la primera semana
+
+  const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
+  const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
+
+  const isHoliday = (date: Date) => {
+    return holidays.some(h => h.getTime() === date.getTime());
+  };
+
   return (
-    <div className="flex h-[calc(100vh-100px)] overflow-hidden">
-      {/* Left Panel: Member List */}
-      <div className="w-[300px] border-r border-border/50 shrink-0 flex flex-col bg-[#0b0c10]/50 z-10">
-        <div className="h-[4.5rem] border-b border-border/50 flex items-center px-4">
-          {session.role === 'admin' ? (
-            <Button
-              variant="ghost"
-              className="w-full justify-start text-indigo-400 hover:text-indigo-300 hover:bg-indigo-900/20 h-10"
-              onClick={handleAddMember}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Crear nuevo miembro
-            </Button>
-          ) : (
-            <div className="w-full text-indigo-400 font-medium px-4 h-10 flex items-center">
-              Miembros del Equipo
-            </div>
-          )}
+    <div className="flex flex-col h-full bg-[#0f111a] text-foreground p-6 overflow-hidden">
+      {/* Calendar Header Tools */}
+      <div className="flex items-center justify-between mb-6 shrink-0">
+        <div className="flex items-center gap-4">
+          <div className="flex items-center bg-[#13151f] rounded-md border border-border p-1">
+            <button onClick={prevMonth} className="p-1.5 hover:bg-white/5 rounded-md transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+            <span className="min-w-[120px] text-center font-medium capitalize text-sm">
+              {format(currentDate, "MMMM yyyy", { locale: es })}
+            </span>
+            <button onClick={nextMonth} className="p-1.5 hover:bg-white/5 rounded-md transition-colors"><ChevronRight className="w-4 h-4" /></button>
+          </div>
+          <button className="text-sm px-3 py-1.5 bg-[#13151f] border border-border rounded-md hover:bg-white/5 transition-colors flex items-center gap-2">
+            Mes Actual
+          </button>
         </div>
-        <div className="flex-1 overflow-y-auto py-2">
-          {members.map((member) => (
-            <div key={member.id} className="flex items-center justify-between px-4 h-14 hover:bg-white/5 transition-colors cursor-pointer border-b border-transparent group">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-indigo-600/80 border border-indigo-500 flex items-center justify-center text-sm font-medium text-white shadow-sm">
-                  {member.name.charAt(0)}
-                </div>
-                <span className="text-sm font-medium text-gray-200">{member.name}</span>
-              </div>
-              {session.role === 'admin' && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-400 hover:bg-red-900/20 transition-all h-8 w-8"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`¿Estás seguro de eliminar a ${member.name}? Se eliminarán todas sus guardias.`)) {
-                      removeMember(member.id);
-                    }
-                  }}
-                  title="Eliminar miembro"
-                >
-                  <Trash className="h-4 w-4" />
-                </Button>
-              )}
+
+        <div className="flex items-center gap-4">
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <input
+                 type="text"
+                 placeholder="Buscar miembro..."
+                 className="pl-9 pr-4 py-1.5 bg-[#13151f] border border-border rounded-md text-sm w-64 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              />
             </div>
-          ))}
+            <div className="flex items-center gap-3 text-xs">
+               <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#F97316" }}></span>
+                  <span className="text-muted-foreground">Matutina</span>
+               </div>
+               <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#A855F7" }}></span>
+                  <span className="text-muted-foreground">Vespertina</span>
+               </div>
+            </div>
         </div>
       </div>
 
-      {/* Right Panel: Timeline */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto bg-[#0f111a]">
-        <div className="min-w-max pb-12">
-          {/* Header row for month/year and days of week */}
-          <div className="flex h-[4.5rem] border-b border-border/50 text-sm text-muted-foreground sticky top-0 bg-[#0f111a] z-0">
-            {/* Filter controls placed above the first week */}
-            <div className="absolute top-2 left-4 z-20 flex items-center gap-2 bg-[#1a1c29] p-1 rounded-md border border-border shadow-sm">
-              <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-6 w-6">
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <span className="text-xs font-medium text-gray-200">
-                {format(startDate, "dd/MM/yyyy")} - {format(endDate, "dd/MM/yyyy")}
-              </span>
-              <Button variant="ghost" size="icon" onClick={handleNextWeek} className="h-6 w-6">
-                <ChevronRight className="h-4 w-4" />
-              </Button>
+      {/* Main Grid Area - Horizontal Scroll */}
+      <div className="flex-1 overflow-x-auto overflow-y-auto border border-border rounded-lg bg-[#13151f] relative">
+         <div className="min-w-[1200px]">
+            {/* Header Row (Days) */}
+            <div className="flex border-b border-border sticky top-0 bg-[#13151f] z-20">
+               {/* Fixed Member Column Header */}
+               <div className="w-48 shrink-0 border-r border-border p-3 sticky left-0 z-30 bg-[#13151f]">
+                  <span className="text-sm font-medium text-muted-foreground">Miembros ({members.length})</span>
+               </div>
+
+               {/* Empty prefix cells for alignment */}
+               {prefixDays.map((_, i) => (
+                  <div key={`header-prefix-${i}`} className="w-12 shrink-0 border-r border-border/50 bg-[#1a1c29]/50"></div>
+               ))}
+
+               {/* Days Headers */}
+               {monthDays.map((day, i) => {
+                  const isHol = isHoliday(day);
+                  return (
+                  <div key={`header-${i}`} className={`w-12 shrink-0 flex flex-col items-center justify-center py-2 border-r border-border ${isHol ? 'bg-amber-500/10 text-amber-200 ring-1 ring-amber-500/50' : 'bg-[#13151f]'}`} title={isHol ? "Feriado" : ""}>
+                     <span className={`text-[10px] uppercase ${isHol ? 'text-amber-200' : 'text-muted-foreground'}`}>{format(day, "EEEEEE", { locale: es })}</span>
+                     <span className={`text-sm font-medium ${isHol ? 'text-amber-400' : ''}`}>{format(day, "d")}</span>
+                  </div>
+               )})}
             </div>
 
-            {/* Offset the days headers downwards to make room for the absolute controller */}
-            {weeks.map((week, i) => (
-              <div key={i} className="flex flex-col border-r border-border/50 last:border-0 relative px-1 pt-6">
-                <div className="flex flex-1 items-end pb-2">
-                  {week.map((day, j) => (
-                    <div key={j} className="w-[3.5rem] flex flex-col items-center justify-center">
-                      <span className="text-xs font-medium text-gray-500 lowercase">{format(day, "EEEEEE", { locale: es })}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Grid rows for members */}
-          <div className="py-2">
-            {members.map((member) => (
-              <div key={member.id} className="flex h-14 items-center hover:bg-white/[0.02] transition-colors border-b border-transparent">
-                {weeks.map((week, i) => (
-                  <div key={i} className="flex border-r border-border/20 last:border-0 h-full py-2 px-1">
-                    {week.map((day, j) => {
-                      const guard = getGuardForMemberAndDay(member.id, day);
-
-                      const cellContent = (
-                        <div
-                          className={`w-full h-full rounded-md flex items-center justify-center text-xs font-medium transition-all ${
-                            guard
-                              ? "text-white shadow-sm ring-1 ring-white/10"
-                              : "bg-[#1e2130] text-gray-500 hover:bg-[#25293c]" // Fondo oscuro neutro
-                          }`}
-                          style={
-                            guard
-                              ? {
-                                  backgroundColor:
-                                    guard.type === "Guardia Matutina"
-                                      ? "#F97316"
-                                      : "#A855F7",
-                                }
-                              : {}
-                          }
-                          title={guard ? `${guard.type} - ${member.name}` : undefined}
-                        >
-                           {format(day, "d")}
+            {/* Members Rows */}
+            <div className="flex flex-col relative z-0">
+               {members.map(member => (
+                  <div key={member.id} className="flex border-b border-border/50 hover:bg-white/[0.02] transition-colors group">
+                     {/* Sticky Member Name */}
+                     <div className="w-48 shrink-0 border-r border-border p-3 flex items-center sticky left-0 z-10 bg-[#13151f] group-hover:bg-[#1a1c29] transition-colors">
+                        <div className="w-6 h-6 rounded bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-medium mr-3">
+                           {member.name.charAt(0).toUpperCase()}
                         </div>
-                      );
+                        <span className="text-sm text-gray-200 truncate">{member.name}</span>
+                     </div>
 
-                      return (
-                        <div
-                          key={j}
-                          className="w-[3.5rem] flex items-center justify-center px-0.5"
-                        >
-                          {guard && session.role === 'admin' ? (
-                            <Popover>
-                              <PopoverTrigger asChild>
-                                <button className="w-full h-full cursor-pointer focus:outline-none focus:ring-2 focus:ring-white/20 rounded-md">
-                                  {cellContent}
-                                </button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-auto p-3 bg-[#13151f] border-border text-white">
-                                <p className="text-sm font-medium mb-2">{guard.type}</p>
-                                <Button
-                                  variant="destructive"
-                                  size="sm"
-                                  onClick={() => removeGuard(guard.id)}
-                                  className="w-full bg-red-600 hover:bg-red-700"
-                                >
-                                  <Trash className="w-4 h-4 mr-2" />
-                                  Eliminar Asignación
-                                </Button>
-                              </PopoverContent>
-                            </Popover>
-                          ) : (
-                            cellContent
-                          )}
-                        </div>
-                      );
-                    })}
+                     {/* Empty prefix cells for alignment */}
+                     {prefixDays.map((_, i) => (
+                        <div key={`cell-prefix-${i}`} className="w-12 shrink-0 border-r border-border/50 bg-[#1a1c29]/20"></div>
+                     ))}
+
+                     {/* Days Cells */}
+                     {monthDays.map((day, i) => {
+                        const guard = guards.find(g =>
+                           g.memberId === member.id &&
+                           isWithinInterval(day, { start: g.startDate, end: g.endDate })
+                        );
+
+                        return (
+                           <div key={`cell-${i}`} className="w-12 shrink-0 border-r border-border/50 p-1 flex items-center justify-center relative">
+                              {guard && (
+                                 <Popover>
+                                    <PopoverTrigger asChild>
+                                       <div
+                                          className="absolute inset-y-1.5 inset-x-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity z-10"
+                                          style={{ backgroundColor: guard.type === 'Guardia Matutina' ? '#F97316' : '#A855F7' }}
+                                          title={`${guard.type}`}
+                                       />
+                                    </PopoverTrigger>
+                                    {session?.role === 'admin' && (
+                                      <PopoverContent className="w-48 p-2 bg-[#1a1c29] border-border z-50">
+                                         <div className="flex flex-col gap-2 text-sm">
+                                            <div className="font-medium">{guard.type}</div>
+                                            <div className="text-xs text-muted-foreground mb-2">
+                                               {format(guard.startDate, "dd MMM")} - {format(guard.endDate, "dd MMM")}
+                                            </div>
+                                            <button
+                                               onClick={() => removeGuard(guard.id)}
+                                               className="flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded transition-colors w-full text-left"
+                                            >
+                                               <Trash2 className="w-4 h-4" /> Eliminar Asignación
+                                            </button>
+                                         </div>
+                                      </PopoverContent>
+                                    )}
+                                 </Popover>
+                              )}
+                           </div>
+                        );
+                     })}
                   </div>
-                ))}
-              </div>
-            ))}
-          </div>
-        </div>
+               ))}
+
+               {members.length === 0 && (
+                  <div className="p-8 text-center text-muted-foreground text-sm flex sticky left-0 w-full justify-center">
+                     No hay miembros en el equipo. Comienza agregando uno en el panel de administración.
+                  </div>
+               )}
+            </div>
+         </div>
       </div>
     </div>
   );

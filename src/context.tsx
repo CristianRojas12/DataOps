@@ -8,6 +8,7 @@ import { LoadingSpinner } from "./components/LoadingSpinner";
 interface GuardContextType {
   members: Member[];
   guards: GuardAssignmentUI[];
+  holidays: Date[];
   isLoading: boolean;
   session: UserSession;
   addMember: (name: string, role?: Role) => Promise<void>;
@@ -24,7 +25,18 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   const [guards, setGuards] = useState<GuardAssignmentUI[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [session, setSession] = useState<UserSession>({ user: null, role: 'user' });
+  const [holidays, setHolidays] = useState<Date[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`https://nolaborables.com.ar/api/v2/feriados/${new Date().getFullYear()}`)
+      .then(res => res.json())
+      .then((data: any[]) => {
+        const parsedHolidays = data.map(h => new Date(new Date().getFullYear(), h.mes - 1, h.dia));
+        setHolidays(parsedHolidays);
+      })
+      .catch(err => console.error("Error fetching holidays:", err));
+  }, []);
 
   const fetchMembers = async () => {
     const { data, error } = await supabase.from('members').select('*');
@@ -208,7 +220,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <GuardContext.Provider value={{ members, guards, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
+    <GuardContext.Provider value={{ members, guards, holidays, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
       {children}
     </GuardContext.Provider>
   );
