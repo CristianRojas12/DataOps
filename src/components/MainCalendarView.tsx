@@ -72,11 +72,11 @@ export function MainCalendarView() {
 
       {/* Main Grid Area - Horizontal Scroll */}
       <div className="flex-1 overflow-x-auto overflow-y-auto border border-border rounded-lg bg-[#13151f] relative">
-         <div className="min-w-[1200px]">
+         <div className="w-max min-w-full">
             {/* Header Row (Days) */}
-            <div className="flex border-b border-border sticky top-0 bg-[#13151f] z-20">
+            <div className="flex border-b border-border sticky top-0 bg-[#13151f] z-40">
                {/* Fixed Member Column Header */}
-               <div className="w-48 shrink-0 border-r border-border p-3 sticky left-0 z-30 bg-[#13151f]">
+               <div className="w-48 shrink-0 border-r border-border p-3 sticky left-0 z-50 bg-[#13151f]">
                   <span className="text-sm font-medium text-muted-foreground">Miembros ({members.length})</span>
                </div>
 
@@ -101,7 +101,7 @@ export function MainCalendarView() {
                {members.map(member => (
                   <div key={member.id} className="flex border-b border-border/50 hover:bg-white/[0.02] transition-colors group">
                      {/* Sticky Member Name */}
-                     <div className="w-48 shrink-0 border-r border-border p-3 flex items-center sticky left-0 z-10 bg-[#13151f] group-hover:bg-[#1a1c29] transition-colors">
+                     <div className="w-48 shrink-0 border-r border-border p-3 flex items-center sticky left-0 z-30 bg-[#13151f] group-hover:bg-[#1a1c29] transition-colors">
                         <div className="w-6 h-6 rounded bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-medium mr-3">
                            {member.name.charAt(0).toUpperCase()}
                         </div>

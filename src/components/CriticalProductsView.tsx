@@ -6,6 +6,7 @@ import type { CriticalProduct, ProductTask } from "../productsTypes";
 import { ProductFormModal } from "./ProductFormModal";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Button } from "@/components/ui/button";
+import { useGuardContext } from "../context";
 
 function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -15,6 +16,8 @@ const ROW_GRID = "64px minmax(160px,1fr) 240px 120px 320px";
 
 export function CriticalProductsView() {
   const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
+  const { session } = useGuardContext();
+  const isAdmin = session?.role === 'admin';
 
   const [now, setNow] = useState(new Date());
   const [alertsEnabled, setAlertsEnabled] = useState(
@@ -91,9 +94,11 @@ export function CriticalProductsView() {
             Alertas activas
           </label>
           <span className="text-lg tabular-nums">{hm(now)}</span>
-          <Button onClick={openAdd} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
-            <span className="text-lg leading-none mb-[2px]">+</span> Agregar producto
-          </Button>
+          {isAdmin && (
+             <Button onClick={openAdd} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+               <span className="text-lg leading-none mb-[2px]">+</span> Agregar producto
+             </Button>
+          )}
         </div>
       </div>
 
@@ -169,32 +174,34 @@ export function CriticalProductsView() {
             </div>
 
             {/* Gestión de productos (alta/edición/baja) */}
-            <div className="mt-8">
-              <h3 className="text-sm font-medium text-muted-foreground mb-3">Productos configurados</h3>
-              <div className="space-y-1.5">
-                {products.map((p) => (
-                  <div key={p.id} className="flex items-center justify-between bg-[#13151f] rounded-lg px-4 py-3">
-                    <div>
-                      <div className="font-medium">{p.name}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Horarios: {(p.schedules ?? []).join("  ·  ") || "Sin horarios"}
+            {isAdmin && (
+              <div className="mt-8">
+                <h3 className="text-sm font-medium text-muted-foreground mb-3">Productos configurados</h3>
+                <div className="space-y-1.5">
+                  {products.map((p) => (
+                    <div key={p.id} className="flex items-center justify-between bg-[#13151f] rounded-lg px-4 py-3">
+                      <div>
+                        <div className="font-medium">{p.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Horarios: {(p.schedules ?? []).join("  ·  ") || "Sin horarios"}
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="secondary" className="h-8" onClick={() => openEdit(p)}>Editar</Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          className="h-8"
+                          onClick={() => { if (confirm(`¿Eliminar "${p.name}"?`)) removeProduct(p.id); }}
+                        >
+                          Eliminar
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="secondary" className="h-8" onClick={() => openEdit(p)}>Editar</Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="h-8"
-                        onClick={() => { if (confirm(`¿Eliminar "${p.name}"?`)) removeProduct(p.id); }}
-                      >
-                        Eliminar
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </>
         )}
       </div>
