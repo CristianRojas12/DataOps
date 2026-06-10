@@ -2,10 +2,11 @@ import { useState } from "react";
 import { MainCalendarView } from "./MainCalendarView";
 import { SummaryView } from "./SummaryView";
 import { AssignGuardModal } from "./AssignGuardModal";
+import { CriticalProductsView } from "./CriticalProductsView";
 import { CalendarDays, LayoutDashboard, Settings, LogOut, Package } from "lucide-react";
 
-
 import { useGuardContext } from "../context";
+import { CriticalProductsProvider } from "../productsContext";
 
 export function MainLayout() {
   const [activeTab, setActiveTab] = useState<"resumen" | "calendario" | "productos">("resumen");
@@ -80,11 +81,9 @@ export function MainLayout() {
             {activeTab === "resumen" && <SummaryView />}
             {activeTab === "calendario" && <MainCalendarView />}
             {activeTab === "productos" && (
-               <div className="h-full flex items-center justify-center flex-col text-muted-foreground p-8 text-center bg-[#0f111a]">
-                 <Package className="w-16 h-16 mb-4 opacity-20" />
-                 <h2 className="text-xl font-medium text-gray-200 mb-2">Módulo de Productos Críticos</h2>
-                 <p className="max-w-md">Esta sección está actualmente en desarrollo tras la última actualización.</p>
-               </div>
+               <CriticalProductsProvider>
+                  <CriticalProductsView />
+               </CriticalProductsProvider>
             )}
          </div>
       </div>
