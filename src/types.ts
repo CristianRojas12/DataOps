@@ -1,8 +1,12 @@
 export type GuardType = "Guardia Matutina" | "Guardia Vespertina";
 
+export type Role = "admin" | "user";
+
 export interface Member {
   id: string;
   name: string;
+  email?: string;
+  role: Role;
 }
 
 export interface GuardAssignment {
@@ -20,4 +24,9 @@ export interface GuardAssignmentUI {
   type: GuardType;
   startDate: Date;
   endDate: Date;
+}
+
+export interface UserSession {
+  user: any | null; // Supabase User
+  role: Role;
 }
