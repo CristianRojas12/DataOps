@@ -1,3 +1,4 @@
+import { useGuardContext } from "../context";
 import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { MainCalendarView } from "./MainCalendarView";
@@ -8,6 +9,7 @@ import { Bell, Megaphone, Settings } from "lucide-react";
 
 export function MainLayout() {
   const [activeTab, setActiveTab] = useState("calendario");
+  const { session } = useGuardContext();
 
   return (
     <div className="flex flex-col h-screen bg-[#0f111a] text-foreground font-sans">
@@ -24,7 +26,7 @@ export function MainLayout() {
               value="calendario"
               className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-indigo-500 rounded-none px-0 h-full text-base font-normal"
             >
-              Mi calendario
+              Calendario
             </TabsTrigger>
             <TabsTrigger
               value="productos"
@@ -46,7 +48,7 @@ export function MainLayout() {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col data-[state=active]:flex">
           {activeTab !== "productos" && (
             <div className="h-16 flex items-center justify-end px-6 border-b border-border shrink-0 bg-[#13151f]">
-              <AssignGuardModal />
+              {session.role === 'admin' && <AssignGuardModal />}
             </div>
           )}
 

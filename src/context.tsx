@@ -1,16 +1,20 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import type { Member, GuardAssignment, GuardAssignmentUI } from "./types";
+import type { Member, GuardAssignment, GuardAssignmentUI, UserSession, Role } from "./types";
 import { supabase } from "./lib/supabase";
 import { parseISO, format } from "date-fns";
+import { LoginView } from "./components/LoginView";
+import { LoadingSpinner } from "./components/LoadingSpinner";
 
 interface GuardContextType {
   members: Member[];
   guards: GuardAssignmentUI[];
   isLoading: boolean;
-  addMember: (name: string) => Promise<void>;
+  session: UserSession;
+  addMember: (name: string, role?: Role) => Promise<void>;
   assignGuard: (guard: Omit<GuardAssignmentUI, "id">) => Promise<void>;
   removeGuard: (id: string) => Promise<void>;
   removeMember: (id: string) => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const GuardContext = createContext<GuardContextType | undefined>(undefined);
@@ -19,6 +23,8 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [guards, setGuards] = useState<GuardAssignmentUI[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [session, setSession] = useState<UserSession>({ user: null, role: 'user' });
+  const [authLoading, setAuthLoading] = useState(true);
 
   const fetchMembers = async () => {
     const { data, error } = await supabase.from('members').select('*');
@@ -53,10 +59,10 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     if (membersData.length === 0) {
       // Initialize default members if empty (for example purposes or initial load)
       const defaultMembers = [
-        { name: "Cristian Rojas" },
-        { name: "Agostina Zorzon" },
-        { name: "Federico Cusa" },
-        { name: "Elias Gomez" }
+        { name: "Cristian Rojas", role: 'admin' },
+        { name: "Agostina Zorzon", role: 'user' },
+        { name: "Federico Cusa", role: 'user' },
+        { name: "Elias Gomez", role: 'user' }
       ];
 
       const { data: newMembers, error } = await supabase
@@ -78,13 +84,42 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    loadInitialData();
+    const handleSessionUpdate = async (currentSession: any) => {
+      if (currentSession?.user) {
+        // Find role in members table based on email
+        const { data } = await supabase
+          .from('members')
+          .select('role')
+          .eq('email', currentSession.user.email)
+          .single();
+
+        setSession({
+          user: currentSession.user,
+          role: (data?.role as Role) || 'user'
+        });
+        loadInitialData(); // Load data once authenticated
+      } else {
+        setSession({ user: null, role: 'user' });
+      }
+      setAuthLoading(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      handleSessionUpdate(currentSession);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      handleSessionUpdate(newSession);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const addMember = async (name: string) => {
+  const addMember = async (name: string, role: Role = 'user') => {
+    if (session.role !== 'admin') return alert("Permiso denegado");
     const { data, error } = await supabase
       .from('members')
-      .insert([{ name }])
+      .insert([{ name, role }])
       .select();
 
     if (error) {
@@ -98,6 +133,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const assignGuard = async (guardUI: Omit<GuardAssignmentUI, "id">) => {
+    if (session.role !== 'admin') return alert("Permiso denegado");
     const newGuard = {
       member_id: guardUI.memberId,
       type: guardUI.type,
@@ -129,6 +165,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeGuard = async (id: string) => {
+    if (session.role !== 'admin') return alert("Permiso denegado");
     const { error } = await supabase
       .from('guards')
       .delete()
@@ -143,6 +180,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   };
 
   const removeMember = async (id: string) => {
+    if (session.role !== 'admin') return alert("Permiso denegado");
     const { error } = await supabase
       .from('members')
       .delete()
@@ -154,13 +192,23 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     }
 
     setMembers((prev) => prev.filter(m => m.id !== id));
-    // Also remove guards locally since ON DELETE CASCADE is only in DB,
-    // though ideally you'd re-fetch, this is more optimistic
     setGuards((prev) => prev.filter(g => g.memberId !== id));
   };
 
+  const logout = async () => {
+    await supabase.auth.signOut();
+  };
+
+  if (authLoading) {
+    return <LoadingSpinner />;
+  }
+
+  if (!session.user) {
+    return <LoginView />;
+  }
+
   return (
-    <GuardContext.Provider value={{ members, guards, isLoading, addMember, assignGuard, removeGuard, removeMember }}>
+    <GuardContext.Provider value={{ members, guards, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
       {children}
     </GuardContext.Provider>
   );
