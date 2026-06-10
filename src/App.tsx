@@ -1,5 +1,6 @@
 import { Suspense, Component, type ReactNode } from "react";
 import { GuardProvider } from "./context";
+import { CriticalProductsProvider } from "./productsContext";
 import { MainLayout } from "./components/MainLayout";
 import { HashRouter, Routes, Route } from "react-router-dom";
 
@@ -40,9 +41,11 @@ function App() {
       <Suspense fallback={<AppLoader />}>
         <HashRouter>
           <GuardProvider>
-            <Routes>
-              <Route path="/*" element={<MainLayout />} />
-            </Routes>
+            <CriticalProductsProvider>
+              <Routes>
+                <Route path="/*" element={<MainLayout />} />
+              </Routes>
+            </CriticalProductsProvider>
           </GuardProvider>
         </HashRouter>
       </Suspense>
