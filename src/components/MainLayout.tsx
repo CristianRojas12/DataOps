@@ -46,17 +46,11 @@ export function MainLayout() {
 
       <main className="flex-1 overflow-hidden flex flex-col">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col data-[state=active]:flex">
-<<<<<<< fix/dataops-guard-management-5464156120180743202
-          <div className="h-16 flex items-center justify-end px-6 border-b border-border shrink-0 bg-[#13151f]">
-            {session.role === 'admin' && <AssignGuardModal />}
-          </div>
-=======
           {activeTab !== "productos" && (
             <div className="h-16 flex items-center justify-end px-6 border-b border-border shrink-0 bg-[#13151f]">
-              <AssignGuardModal />
+              {session.role === 'admin' && <AssignGuardModal />}
             </div>
           )}
->>>>>>> main
 
           <TabsContent value="calendario" className="flex-1 m-0 p-0 overflow-hidden outline-none data-[state=active]:flex flex-col">
             <MainCalendarView />

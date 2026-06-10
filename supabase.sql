@@ -32,7 +32,6 @@ RETURNS BOOLEAN AS $$
   );
 $$ LANGUAGE sql SECURITY DEFINER;
 
-<<<<<<< fix/dataops-guard-management-5464156120180743202
 -- Policies for members table
 CREATE POLICY "Allow authenticated read access to members" ON public.members FOR SELECT USING (auth.role() = 'authenticated');
 CREATE POLICY "Allow admin insert access to members" ON public.members FOR INSERT WITH CHECK (public.is_admin());
@@ -44,10 +43,6 @@ CREATE POLICY "Allow authenticated read access to guards" ON public.guards FOR S
 CREATE POLICY "Allow admin insert access to guards" ON public.guards FOR INSERT WITH CHECK (public.is_admin());
 CREATE POLICY "Allow admin delete access to guards" ON public.guards FOR DELETE USING (public.is_admin());
 CREATE POLICY "Allow admin update access to guards" ON public.guards FOR UPDATE USING (public.is_admin());
-=======
-CREATE POLICY "Allow public read access to guards" ON public.guards FOR SELECT USING (true);
-CREATE POLICY "Allow public insert access to guards" ON public.guards FOR INSERT WITH CHECK (true);
-CREATE POLICY "Allow public delete access to guards" ON public.guards FOR DELETE USING (true);
 
 -- ============================================================================
 -- Monitoreo de Productos Críticos (pestaña agregada)
@@ -86,4 +81,3 @@ CREATE POLICY "Public delete critical_products" ON public.critical_products FOR 
 CREATE POLICY "Public select product_done" ON public.product_done FOR SELECT USING (true);
 CREATE POLICY "Public insert product_done" ON public.product_done FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public delete product_done" ON public.product_done FOR DELETE USING (true);
->>>>>>> main
