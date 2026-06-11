@@ -4,14 +4,18 @@ import { SummaryView } from "./SummaryView";
 import { AssignGuardModal } from "./AssignGuardModal";
 import { CriticalProductsView } from "./CriticalProductsView";
 import { CriticalProductsControls } from "./CriticalProductsControls";
-import { CalendarDays, LayoutDashboard, Settings, LogOut, Package } from "lucide-react";
+import { RequestTimeOffModal } from "./RequestTimeOffModal";
+import { RequestsView } from "./RequestsView";
+import { CalendarDays, LayoutDashboard, Settings, LogOut, Package, Plane } from "lucide-react";
 
 import { useGuardContext } from "../context";
+import { useUiStore } from "../store";
 import { CriticalProductsProvider } from "../productsContext";
 
 export function MainLayout() {
-  const [activeTab, setActiveTab] = useState<"resumen" | "calendario" | "productos">("resumen");
+  const [activeTab, setActiveTab] = useState<"resumen" | "calendario" | "productos" | "solicitudes">("resumen");
   const { session, logout } = useGuardContext();
+  const { setTimeOffModalOpen } = useUiStore();
 
   return (
     <div className="flex h-screen bg-[#0f111a] text-white overflow-hidden font-sans">
@@ -46,6 +50,13 @@ export function MainLayout() {
                <Package className="w-5 h-5 shrink-0" />
                <span className="font-medium hidden md:block">Productos Críticos</span>
             </button>
+            <button
+               onClick={() => setActiveTab("solicitudes")}
+               className={`flex items-center gap-3 px-3 py-2.5 rounded-md transition-colors ${activeTab === 'solicitudes' ? 'bg-indigo-500/10 text-indigo-400' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}`}
+            >
+               <Plane className="w-5 h-5 shrink-0" />
+               <span className="font-medium hidden md:block">Solicitudes</span>
+            </button>
          </div>
 
          <div className="p-4 border-t border-border mt-auto">
@@ -71,7 +82,15 @@ export function MainLayout() {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col min-w-0">
          {/* Top Header - Strict UI Rule: Standardized central area for Action buttons */}
-         <div className="h-16 flex items-center justify-end px-6 border-b border-border shrink-0 bg-[#13151f]">
+         <div className="h-16 flex items-center justify-end px-6 border-b border-border shrink-0 bg-[#13151f] gap-4">
+            {activeTab === "resumen" && (
+              <button
+                 onClick={() => setTimeOffModalOpen(true)}
+                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                 + Crear Solicitud
+              </button>
+            )}
             {activeTab !== "productos" && session?.role === 'admin' && (
               <AssignGuardModal />
             )}
@@ -79,10 +98,12 @@ export function MainLayout() {
               <CriticalProductsControls />
             )}
          </div>
+         <RequestTimeOffModal />
 
          <div className="flex-1 overflow-hidden relative">
             {activeTab === "resumen" && <SummaryView />}
             {activeTab === "calendario" && <MainCalendarView />}
+            {activeTab === "solicitudes" && <RequestsView />}
             {activeTab === "productos" && (
                <CriticalProductsProvider>
                   <CriticalProductsView />

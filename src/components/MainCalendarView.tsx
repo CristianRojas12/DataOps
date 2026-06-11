@@ -9,7 +9,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 
 export function MainCalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { members, guards, calendarDim, removeGuard, isLoading, session } = useGuardContext();
+  const { members, guards, timeOffRequests, calendarDim, removeGuard, isLoading, session } = useGuardContext();
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -58,7 +58,7 @@ export function MainCalendarView() {
                  className="pl-9 pr-4 py-1.5 bg-[#13151f] border border-border rounded-md text-sm w-64 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
-            <div className="flex items-center gap-3 text-xs">
+            <div className="flex items-center gap-3 text-xs flex-wrap justify-end max-w-sm">
                <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#F97316" }}></span>
                   <span className="text-muted-foreground">Matutina</span>
@@ -66,6 +66,14 @@ export function MainCalendarView() {
                <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#A855F7" }}></span>
                   <span className="text-muted-foreground">Vespertina</span>
+               </div>
+               <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-sm bg-green-500"></span>
+                  <span className="text-muted-foreground">Vacaciones</span>
+               </div>
+               <div className="flex items-center gap-1.5">
+                  <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#6C6E7D" }}></span>
+                  <span className="text-muted-foreground">Día Libre</span>
                </div>
             </div>
         </div>
@@ -123,13 +131,26 @@ export function MainCalendarView() {
                            isWithinInterval(day, { start: g.startDate, end: g.endDate })
                         );
 
+                        const timeOff = timeOffRequests.find(r =>
+                           r.memberId === member.id &&
+                           r.status === 'approved' &&
+                           isWithinInterval(day, { start: r.startDate, end: r.endDate })
+                        );
+
                         return (
                            <div key={`cell-${i}`} className="w-12 shrink-0 border-r border-border/50 p-1 flex items-center justify-center relative">
+                              {timeOff && (
+                                 <div
+                                    className="absolute inset-y-1.5 inset-x-0.5 rounded opacity-90 z-20"
+                                    style={{ backgroundColor: timeOff.type === 'vacaciones' ? '#22c55e' : '#6C6E7D' }}
+                                    title={`${timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre'}`}
+                                 />
+                              )}
                               {guard && (
                                  <Popover>
                                     <PopoverTrigger asChild>
                                        <div
-                                          className="absolute inset-y-1.5 inset-x-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity z-10"
+                                          className={`absolute inset-y-1.5 inset-x-0.5 rounded cursor-pointer hover:opacity-80 transition-opacity z-10 ${timeOff ? 'h-1/2 top-auto' : ''}`}
                                           style={{ backgroundColor: guard.type === 'Guardia Matutina' ? '#F97316' : '#A855F7' }}
                                           title={`${guard.type}`}
                                        />

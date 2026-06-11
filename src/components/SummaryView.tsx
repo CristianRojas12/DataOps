@@ -10,7 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 type FilterMode = "currentMonth" | "ytd";
 
 export function SummaryView() {
-  const { members, guards, calendarDim, isLoading } = useGuardContext();
+  const { members, guards, timeOffRequests, calendarDim, isLoading } = useGuardContext();
   const [selectedMemberId, setSelectedMemberId] = useState<string>("");
   const [filterMode, setFilterMode] = useState<FilterMode>("currentMonth");
   const [currentYear] = useState(new Date().getFullYear());
@@ -58,6 +58,19 @@ export function SummaryView() {
   // Métricas
   const getMetricsForMember = (memberId: string) => {
     const memberGuards = guards.filter((g) => g.memberId === memberId);
+
+    // Time off metric calculation
+    const allAssignedDays = memberGuards.reduce((acc, g) => acc + eachDayOfInterval({ start: g.startDate, end: g.endDate }).length, 0);
+
+    const approvedDiaGuardiaRequests = timeOffRequests.filter(r =>
+       r.memberId === memberId &&
+       r.status === 'approved' &&
+       r.type === 'dia_guardia'
+    );
+    const consumedTimeOffDays = approvedDiaGuardiaRequests.reduce((acc, r) => acc + eachDayOfInterval({ start: r.startDate, end: r.endDate }).length, 0);
+
+    const availableTimeOffDays = allAssignedDays - consumedTimeOffDays;
+
     let totalDays = 0;
     let weekendDays = 0;
     let holidayCount = 0;
@@ -120,7 +133,7 @@ export function SummaryView() {
       }
     }
 
-    return { totalDays, weekendDays, holidayCount, hasConsecutiveWeeks };
+    return { totalDays, weekendDays, holidayCount, hasConsecutiveWeeks, availableTimeOffDays };
   };
 
   // Promedio General del Equipo
@@ -192,7 +205,12 @@ export function SummaryView() {
                   onClick={() => setSelectedMemberId(member.id)}
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-medium text-sm text-gray-200">{member.name}</span>
+                    <span className="font-medium text-sm text-gray-200 flex flex-col gap-0.5">
+                       {member.name}
+                       <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 w-max border border-indigo-500/30">
+                         Días Libres Disponibles: {metrics.availableTimeOffDays}
+                       </span>
+                    </span>
                     {isBurnoutRisk && (
                       <Tooltip>
                         <TooltipTrigger asChild>

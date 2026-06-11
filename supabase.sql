@@ -81,3 +81,40 @@ CREATE POLICY "Public delete critical_products" ON public.critical_products FOR 
 CREATE POLICY "Public select product_done" ON public.product_done FOR SELECT USING (true);
 CREATE POLICY "Public insert product_done" ON public.product_done FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public delete product_done" ON public.product_done FOR DELETE USING (true);
+
+-- ============================================================================
+-- Gestión de Días Libres y Vacaciones
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS public.time_off_requests (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    member_id uuid NOT NULL REFERENCES public.members(id) ON DELETE CASCADE,
+    type text NOT NULL CHECK (type IN ('vacaciones', 'dia_guardia')),
+    start_date date NOT NULL,
+    end_date date NOT NULL,
+    reason text,
+    status text NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at timestamp with time zone DEFAULT now()
+);
+
+ALTER TABLE public.time_off_requests ENABLE ROW LEVEL SECURITY;
+
+-- Helper function to get current user's member_id based on email
+CREATE OR REPLACE FUNCTION public.get_current_member_id()
+RETURNS uuid AS $$
+  SELECT id FROM public.members WHERE email = (SELECT auth.jwt() ->> 'email') LIMIT 1;
+$$ LANGUAGE sql SECURITY DEFINER;
+
+-- Policies for users
+CREATE POLICY "Users can insert their own requests" ON public.time_off_requests
+    FOR INSERT WITH CHECK (member_id = public.get_current_member_id());
+
+CREATE POLICY "Users can view their own requests" ON public.time_off_requests
+    FOR SELECT USING (member_id = public.get_current_member_id());
+
+-- Policies for admins
+CREATE POLICY "Admins can view all requests" ON public.time_off_requests
+    FOR SELECT USING (public.is_admin());
+
+CREATE POLICY "Admins can update request status" ON public.time_off_requests
+    FOR UPDATE USING (public.is_admin());

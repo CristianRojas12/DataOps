@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import type { Member, GuardAssignment, GuardAssignmentUI, UserSession, Role, DimCalendarRow } from "./types";
+import type { Member, GuardAssignment, GuardAssignmentUI, UserSession, Role, DimCalendarRow, TimeOffRequestUI, TimeOffRequestDB, TimeOffStatus } from "./types";
 import { supabase } from "./lib/supabase";
 import { parseISO, format } from "date-fns";
 import { LoginView } from "./components/LoginView";
@@ -8,6 +8,7 @@ import { LoadingSpinner } from "./components/LoadingSpinner";
 interface GuardContextType {
   members: Member[];
   guards: GuardAssignmentUI[];
+  timeOffRequests: TimeOffRequestUI[];
   calendarDim: DimCalendarRow[];
   isLoading: boolean;
   session: UserSession;
@@ -15,6 +16,8 @@ interface GuardContextType {
   assignGuard: (guard: Omit<GuardAssignmentUI, "id">) => Promise<void>;
   removeGuard: (id: string) => Promise<void>;
   removeMember: (id: string) => Promise<void>;
+  createTimeOffRequest: (request: Omit<TimeOffRequestUI, "id" | "status" | "createdAt">) => Promise<void>;
+  updateTimeOffRequestStatus: (id: string, status: TimeOffStatus) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -23,8 +26,9 @@ const GuardContext = createContext<GuardContextType | undefined>(undefined);
 export function GuardProvider({ children }: { children: React.ReactNode }) {
   const [members, setMembers] = useState<Member[]>([]);
   const [guards, setGuards] = useState<GuardAssignmentUI[]>([]);
+  const [timeOffRequests, setTimeOffRequests] = useState<TimeOffRequestUI[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [session, setSession] = useState<UserSession>({ user: null, role: 'user' });
+  const [session, setSession] = useState<UserSession>({ user: null, role: 'user', memberId: null });
   const [calendarDim, setCalendarDim] = useState<DimCalendarRow[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
 
@@ -63,11 +67,40 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     }));
   };
 
+  const fetchTimeOffRequests = async () => {
+    const { data, error } = await supabase.from('time_off_requests').select('*');
+    if (error) {
+      if (error.code === '42P01') {
+         // table doesn't exist yet
+         return [];
+      }
+      console.error("Error fetching time off requests:", error);
+      return [];
+    }
+
+    return (data as TimeOffRequestDB[]).map(r => ({
+      id: r.id,
+      memberId: r.member_id,
+      type: r.type,
+      startDate: parseISO(r.start_date),
+      endDate: parseISO(r.end_date),
+      reason: r.reason,
+      status: r.status,
+      createdAt: parseISO(r.created_at)
+    }));
+  };
+
   const loadInitialData = async () => {
     setIsLoading(true);
-    const [membersData, guardsData, calendarData] = await Promise.all([fetchMembers(), fetchGuards(), fetchCalendarDim()]);
+    const [membersData, guardsData, calendarData, requestsData] = await Promise.all([
+      fetchMembers(),
+      fetchGuards(),
+      fetchCalendarDim(),
+      fetchTimeOffRequests()
+    ]);
 
     setCalendarDim(calendarData);
+    setTimeOffRequests(requestsData);
 
     if (membersData.length === 0) {
       // Initialize default members if empty (for example purposes or initial load)
@@ -102,17 +135,18 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
         // Find role in members table based on email
         const { data } = await supabase
           .from('members')
-          .select('role')
+          .select('id, role')
           .eq('email', currentSession.user.email)
           .single();
 
         setSession({
           user: currentSession.user,
-          role: (data?.role as Role) || 'user'
+          role: (data?.role as Role) || 'user',
+          memberId: data?.id || null
         });
         loadInitialData(); // Load data once authenticated
       } else {
-        setSession({ user: null, role: 'user' });
+        setSession({ user: null, role: 'user', memberId: null });
       }
       setAuthLoading(false);
     };
@@ -208,6 +242,57 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     setGuards((prev) => prev.filter(g => g.memberId !== id));
   };
 
+  const createTimeOffRequest = async (requestUI: Omit<TimeOffRequestUI, "id" | "status" | "createdAt">) => {
+    const newRequest = {
+      member_id: requestUI.memberId,
+      type: requestUI.type,
+      start_date: format(requestUI.startDate, 'yyyy-MM-dd'),
+      end_date: format(requestUI.endDate, 'yyyy-MM-dd'),
+      reason: requestUI.reason,
+      status: 'pending' as TimeOffStatus
+    };
+
+    const { data, error } = await supabase
+      .from('time_off_requests')
+      .insert([newRequest])
+      .select();
+
+    if (error) {
+      console.error("Error creating time off request:", error);
+      return;
+    }
+
+    if (data && data.length > 0) {
+      const r = data[0] as TimeOffRequestDB;
+      const addedRequest: TimeOffRequestUI = {
+        id: r.id,
+        memberId: r.member_id,
+        type: r.type,
+        startDate: parseISO(r.start_date),
+        endDate: parseISO(r.end_date),
+        reason: r.reason,
+        status: r.status,
+        createdAt: parseISO(r.created_at)
+      };
+      setTimeOffRequests((prev) => [...prev, addedRequest]);
+    }
+  };
+
+  const updateTimeOffRequestStatus = async (id: string, status: TimeOffStatus) => {
+    if (session.role !== 'admin') return alert("Permiso denegado");
+    const { error } = await supabase
+      .from('time_off_requests')
+      .update({ status })
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error updating time off request status:", error);
+      return;
+    }
+
+    setTimeOffRequests((prev) => prev.map(r => r.id === id ? { ...r, status } : r));
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
   };
@@ -221,7 +306,11 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <GuardContext.Provider value={{ members, guards, calendarDim, isLoading, session, addMember, assignGuard, removeGuard, removeMember, logout }}>
+    <GuardContext.Provider value={{
+       members, guards, timeOffRequests, calendarDim, isLoading, session,
+       addMember, assignGuard, removeGuard, removeMember,
+       createTimeOffRequest, updateTimeOffRequestStatus, logout
+    }}>
       {children}
     </GuardContext.Provider>
   );

@@ -29,6 +29,7 @@ export interface GuardAssignmentUI {
 export interface UserSession {
   user: any | null; // Supabase User
   role: Role;
+  memberId: string | null;
 }
 
 export interface DimCalendarRow {
@@ -40,4 +41,29 @@ export interface DimCalendarRow {
   is_weekend: boolean;
   is_holiday: boolean;
   holiday_name: string | null;
+}
+
+export type TimeOffType = 'vacaciones' | 'dia_guardia';
+export type TimeOffStatus = 'pending' | 'approved' | 'rejected';
+
+export interface TimeOffRequestDB {
+  id: string;
+  member_id: string;
+  type: TimeOffType;
+  start_date: string;
+  end_date: string;
+  reason: string | null;
+  status: TimeOffStatus;
+  created_at: string;
+}
+
+export interface TimeOffRequestUI {
+  id: string;
+  memberId: string;
+  type: TimeOffType;
+  startDate: Date;
+  endDate: Date;
+  reason: string | null;
+  status: TimeOffStatus;
+  createdAt: Date;
 }
