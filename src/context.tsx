@@ -296,17 +296,23 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
 
   const deleteTimeOffRequest = async (id: string) => {
     if (session.role !== 'admin') return alert("Permiso denegado");
-    const { error } = await supabase
-      .from('time_off_requests')
-      .delete()
-      .eq('id', id);
 
-    if (error) {
-      console.error("Error deleting time off request:", error);
-      return;
+    try {
+      const { error } = await supabase
+        .from('time_off_requests')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error("Error deleting time off request:", error);
+        throw error;
+      }
+
+      setTimeOffRequests((prev) => prev.filter(r => r.id !== id));
+    } catch (e) {
+      console.error("Failed to delete time off request", e);
+      alert("Hubo un problema al intentar eliminar la solicitud.");
     }
-
-    setTimeOffRequests((prev) => prev.filter(r => r.id !== id));
   };
 
   const logout = async () => {

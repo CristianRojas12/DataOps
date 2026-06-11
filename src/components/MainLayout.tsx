@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { MainCalendarView } from "./MainCalendarView";
 import { SummaryView } from "./SummaryView";
 import { AssignGuardModal } from "./AssignGuardModal";
@@ -13,9 +13,15 @@ import { useUiStore } from "../store";
 import { CriticalProductsProvider } from "../productsContext";
 
 export function MainLayout() {
-  const [activeTab, setActiveTab] = useState<"resumen" | "calendario" | "productos" | "solicitudes">("resumen");
+  const [activeTab, setActiveTab] = useState<"resumen" | "calendario" | "productos" | "solicitudes">(
+    () => (localStorage.getItem("dataops_active_tab") as any) || "resumen"
+  );
   const { session, logout } = useGuardContext();
   const { setTimeOffModalOpen } = useUiStore();
+
+  useEffect(() => {
+    localStorage.setItem("dataops_active_tab", activeTab);
+  }, [activeTab]);
 
   return (
     <div className="flex h-screen bg-[#0f111a] text-white overflow-hidden font-sans">
