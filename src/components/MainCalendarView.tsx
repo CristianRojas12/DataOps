@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, startOfWeek } from "date-fns";
+import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval } from "date-fns";
 import { es } from "date-fns/locale";
 import { ChevronLeft, ChevronRight, Search, Trash2 } from "lucide-react";
 import { useGuardContext } from "../context";
@@ -19,10 +19,6 @@ export function MainCalendarView() {
   const start = startOfMonth(currentDate);
   const end = endOfMonth(currentDate);
   const monthDays = eachDayOfInterval({ start, end });
-  const firstDayOfWeek = startOfWeek(start, { weekStartsOn: 1 });
-  const prefixDays = eachDayOfInterval({ start: firstDayOfWeek, end: start }).slice(0, -1);
-
-  // Rellenar para garantizar las celdas necesarias para la primera semana
 
   const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
   const prevMonth = () => setCurrentDate(subMonths(currentDate, 1));
@@ -92,11 +88,6 @@ export function MainCalendarView() {
                   <span className="text-sm font-medium text-muted-foreground">Miembros ({members.length})</span>
                </div>
 
-               {/* Empty prefix cells for alignment */}
-               {prefixDays.map((_, i) => (
-                  <div key={`header-prefix-${i}`} className="w-12 shrink-0 border-r border-border/50 bg-[#1a1c29]/50"></div>
-               ))}
-
                {/* Days Headers */}
                {monthDays.map((day, i) => {
                   const dim = getDayDim(day);
@@ -121,11 +112,6 @@ export function MainCalendarView() {
                         </div>
                         <span className="text-sm text-gray-200 truncate">{member.name}</span>
                      </div>
-
-                     {/* Empty prefix cells for alignment */}
-                     {prefixDays.map((_, i) => (
-                        <div key={`cell-prefix-${i}`} className="w-12 shrink-0 border-r border-border/50 bg-[#1a1c29]/20"></div>
-                     ))}
 
                      {/* Days Cells */}
                      {monthDays.map((day, i) => {

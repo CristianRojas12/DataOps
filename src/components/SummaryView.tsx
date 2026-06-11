@@ -73,7 +73,7 @@ export function SummaryView() {
     const memberGuards = guards.filter((g) => g.memberId === memberId);
 
     // Time off metric calculation
-    const allAssignedDays = memberGuards.reduce((acc, g) => acc + eachDayOfInterval({ start: g.startDate, end: g.endDate }).length, 0);
+    const allAssignedDays = memberGuards.length;
 
     const approvedDiaGuardiaRequests = timeOffRequests.filter(r =>
        r.memberId === memberId &&
