@@ -17,6 +17,10 @@ interface UiState {
   setProductsAlertsEnabled: (enabled: boolean) => void;
   productsAddModalOpen: boolean;
   setProductsAddModalOpen: (open: boolean) => void;
+
+  // Time Off Request Modal state
+  timeOffModalOpen: boolean;
+  setTimeOffModalOpen: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -27,6 +31,9 @@ export const useUiStore = create<UiState>((set) => ({
   },
   productsAddModalOpen: false,
   setProductsAddModalOpen: (open) => set({ productsAddModalOpen: open }),
+
+  timeOffModalOpen: false,
+  setTimeOffModalOpen: (open) => set({ timeOffModalOpen: open }),
 }));
 
 export type { CalendarDay };
