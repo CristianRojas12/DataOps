@@ -11,7 +11,9 @@ type FilterMode = "currentMonth" | "ytd";
 
 export function SummaryView() {
   const { members, guards, timeOffRequests, calendarDim, isLoading } = useGuardContext();
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
+  const [selectedMemberId, setSelectedMemberId] = useState<string>(
+    () => localStorage.getItem("dataops_selected_member") || ""
+  );
   const [filterMode, setFilterMode] = useState<FilterMode>("currentMonth");
   const [currentYear] = useState(new Date().getFullYear());
   const [currentMonthIndex] = useState(new Date().getMonth());
@@ -19,9 +21,20 @@ export function SummaryView() {
 
   useEffect(() => {
     if (members.length > 0 && !selectedMemberId) {
-      setSelectedMemberId(members[0].id);
+      const stored = localStorage.getItem("dataops_selected_member");
+      if (stored && members.some(m => m.id === stored)) {
+        setSelectedMemberId(stored);
+      } else {
+        setSelectedMemberId(members[0].id);
+      }
     }
   }, [members, selectedMemberId]);
+
+  useEffect(() => {
+    if (selectedMemberId) {
+      localStorage.setItem("dataops_selected_member", selectedMemberId);
+    }
+  }, [selectedMemberId]);
 
   useEffect(() => {
     // Scroll to current month on mount
@@ -211,7 +224,10 @@ export function SummaryView() {
                 <div
                   key={member.id}
                   className={`p-3 rounded-md border cursor-pointer transition-colors ${isSelected ? 'bg-indigo-900/30 border-indigo-500/50' : 'bg-[#13151f] border-border hover:bg-[#1a1c29]'}`}
-                  onClick={() => setSelectedMemberId(member.id)}
+                  onClick={() => {
+                    setSelectedMemberId(member.id);
+                    localStorage.setItem("dataops_selected_member", member.id);
+                  }}
                 >
                   <div className="flex justify-between items-start mb-1">
                     <span className="font-medium text-sm text-gray-200">
