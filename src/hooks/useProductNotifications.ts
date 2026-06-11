@@ -55,7 +55,7 @@ export function useProductNotifications(products: CriticalProduct[], enabled: bo
     };
 
     check();
-    const id = setInterval(check, 20_000);
+    const id = setInterval(check, 60_000);
     return () => clearInterval(id);
   }, []);
 }

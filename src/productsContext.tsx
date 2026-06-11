@@ -40,7 +40,13 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
     ]);
 
     if (prodRes.error) console.error("Error fetching critical_products:", prodRes.error);
-    else setProducts((prodRes.data ?? []) as CriticalProduct[]);
+    else
+      setProducts(
+        (prodRes.data ?? []).map((p: any) => ({
+          ...p,
+          links: Array.isArray(p.links) ? p.links : [],
+        })) as CriticalProduct[],
+      );
 
     if (doneRes.error) console.error("Error fetching product_done:", doneRes.error);
     else setDoneKeys(new Set((doneRes.data ?? []).map((d: any) => doneKey(d.product_id, d.time))));
