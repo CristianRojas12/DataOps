@@ -119,7 +119,7 @@ export function AssignGuardModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
+        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 h-9 px-4 w-auto min-w-[140px] rounded-md text-sm font-medium transition-colors flex items-center justify-center">
           <span className="text-lg leading-none mb-[2px]">+</span> Asignar Guardias
         </Button>
       </DialogTrigger>

@@ -71,6 +71,15 @@ export function SummaryView() {
 
     const availableTimeOffDays = allAssignedDays - consumedTimeOffDays;
 
+    const approvedVacacionesRequests = timeOffRequests.filter(r =>
+       r.memberId === memberId &&
+       r.status === 'approved' &&
+       r.type === 'vacaciones'
+    );
+    const consumedVacationDays = approvedVacacionesRequests.reduce((acc, r) => acc + eachDayOfInterval({ start: r.startDate, end: r.endDate }).length, 0);
+
+    const availableVacationDays = 10 - consumedVacationDays;
+
     let totalDays = 0;
     let weekendDays = 0;
     let holidayCount = 0;
@@ -133,7 +142,7 @@ export function SummaryView() {
       }
     }
 
-    return { totalDays, weekendDays, holidayCount, hasConsecutiveWeeks, availableTimeOffDays };
+    return { totalDays, weekendDays, holidayCount, hasConsecutiveWeeks, availableTimeOffDays, availableVacationDays };
   };
 
   // Promedio General del Equipo
@@ -161,7 +170,7 @@ export function SummaryView() {
         <div className="bg-[#13151f] p-4 rounded-lg border border-border">
           <div className="flex justify-between items-center mb-3">
              <label className="text-sm font-medium">
-               Métricas ({filterMode === 'currentMonth' ? format(currentMonthDate, "MMMM", { locale: es }) : 'YTD'})
+               Métricas ({filterMode === 'currentMonth' ? format(currentMonthDate, "MMMM", { locale: es }).charAt(0).toUpperCase() + format(currentMonthDate, "MMMM", { locale: es }).slice(1) : 'YTD'})
              </label>
              <button
                 onClick={() => setFilterMode(prev => prev === 'currentMonth' ? 'ytd' : 'currentMonth')}
@@ -205,11 +214,8 @@ export function SummaryView() {
                   onClick={() => setSelectedMemberId(member.id)}
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-medium text-sm text-gray-200 flex flex-col gap-0.5">
+                    <span className="font-medium text-sm text-gray-200">
                        {member.name}
-                       <span className="text-[10px] font-normal px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 w-max border border-indigo-500/30">
-                         Días Libres Disponibles: {metrics.availableTimeOffDays}
-                       </span>
                     </span>
                     {isBurnoutRisk && (
                       <Tooltip>
@@ -223,11 +229,8 @@ export function SummaryView() {
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground flex flex-col gap-0.5">
-                    <span>Total: {metrics.totalDays} días</span>
-                    <span className="flex gap-2">
-                       <span>Fines de semana: {metrics.weekendDays}</span>
-                       <span>Feriados: {metrics.holidayCount}</span>
-                    </span>
+                    <span>Total: {metrics.totalDays} días (Fines de semana: {metrics.weekendDays} | Feriados: {metrics.holidayCount})</span>
+                    <span>Vacaciones: {metrics.availableVacationDays} | Días Libres: {metrics.availableTimeOffDays}</span>
                   </div>
                 </div>
               );
@@ -281,32 +284,43 @@ export function SummaryView() {
                           isWithinInterval(day, { start: g.startDate, end: g.endDate })
                         );
 
+                        const timeOff = timeOffRequests.find(r =>
+                           r.memberId === selectedMemberId &&
+                           r.status === 'approved' &&
+                           isWithinInterval(day, { start: r.startDate, end: r.endDate })
+                        );
+
                         const dim = getDayDim(day);
                         const isHol = dim?.is_holiday ?? false;
 
                         return (
                           <div
                             key={i}
-                            className={`h-8 flex items-center justify-center rounded-md relative ${
-                              guard
+                            className={`h-8 flex items-center justify-center rounded-md relative overflow-hidden ${
+                              guard || timeOff
                                 ? "text-white"
                                 : "text-muted-foreground hover:bg-white/5"
-                            } ${isHol && !guard ? 'text-amber-200 bg-amber-500/10' : ''} ${isHol && guard ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#13151f]' : ''}`}
-                            style={
-                              guard
-                                ? {
-                                    backgroundColor:
-                                      guard.type === "Guardia Matutina"
-                                        ? "#F97316"
-                                        : "#A855F7",
-                                  }
-                                : {}
+                            } ${isHol && !guard && !timeOff ? 'text-amber-200 bg-amber-500/10' : ''} ${isHol && (guard || timeOff) ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#13151f]' : ''}`}
+                            style={{
+                               ...(guard ? { backgroundColor: guard.type === "Guardia Matutina" ? "#F97316" : "#A855F7" } : {}),
+                               ...(timeOff ? { backgroundColor: timeOff.type === 'vacaciones' ? '#22c55e' : '#6C6E7D' } : {}),
+                            }}
+                            title={
+                               timeOff
+                                  ? (timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre')
+                                  : (isHol ? dim?.holiday_name || "Feriado" : "")
                             }
-                            title={isHol ? dim?.holiday_name || "Feriado" : ""}
                           >
-                            {format(day, "d")}
-                            {isHol && !guard && (
-                               <span className="absolute top-1 right-1 w-1 h-1 bg-amber-500 rounded-full"></span>
+                            {/* If both exist, show guard as a top sliver */}
+                            {guard && timeOff && (
+                               <div
+                                  className="absolute top-0 left-0 right-0 h-1/2"
+                                  style={{ backgroundColor: guard.type === "Guardia Matutina" ? "#F97316" : "#A855F7" }}
+                               />
+                            )}
+                            <span className="relative z-10">{format(day, "d")}</span>
+                            {isHol && !guard && !timeOff && (
+                               <span className="absolute top-1 right-1 w-1 h-1 bg-amber-500 rounded-full z-10"></span>
                             )}
                           </div>
                         );

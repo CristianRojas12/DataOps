@@ -18,6 +18,7 @@ interface GuardContextType {
   removeMember: (id: string) => Promise<void>;
   createTimeOffRequest: (request: Omit<TimeOffRequestUI, "id" | "status" | "createdAt">) => Promise<void>;
   updateTimeOffRequestStatus: (id: string, status: TimeOffStatus) => Promise<void>;
+  deleteTimeOffRequest: (id: string) => Promise<void>;
   logout: () => Promise<void>;
 }
 
@@ -293,6 +294,21 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     setTimeOffRequests((prev) => prev.map(r => r.id === id ? { ...r, status } : r));
   };
 
+  const deleteTimeOffRequest = async (id: string) => {
+    if (session.role !== 'admin') return alert("Permiso denegado");
+    const { error } = await supabase
+      .from('time_off_requests')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error("Error deleting time off request:", error);
+      return;
+    }
+
+    setTimeOffRequests((prev) => prev.filter(r => r.id !== id));
+  };
+
   const logout = async () => {
     await supabase.auth.signOut();
   };
@@ -309,7 +325,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     <GuardContext.Provider value={{
        members, guards, timeOffRequests, calendarDim, isLoading, session,
        addMember, assignGuard, removeGuard, removeMember,
-       createTimeOffRequest, updateTimeOffRequestStatus, logout
+       createTimeOffRequest, updateTimeOffRequestStatus, deleteTimeOffRequest, logout
     }}>
       {children}
     </GuardContext.Provider>
