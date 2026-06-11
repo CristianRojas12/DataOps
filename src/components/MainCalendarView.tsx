@@ -9,7 +9,7 @@ import { LoadingSpinner } from "./LoadingSpinner";
 
 export function MainCalendarView() {
   const [currentDate, setCurrentDate] = useState(new Date());
-  const { members, guards, timeOffRequests, calendarDim, removeGuard, isLoading, session } = useGuardContext();
+  const { members, guards, timeOffRequests, calendarDim, removeGuard, deleteTimeOffRequest, isLoading, session } = useGuardContext();
 
   if (isLoading) {
     return <LoadingSpinner />;
@@ -44,7 +44,10 @@ export function MainCalendarView() {
             </span>
             <button onClick={nextMonth} className="p-1.5 hover:bg-white/5 rounded-md transition-colors"><ChevronRight className="w-4 h-4" /></button>
           </div>
-          <button className="text-sm px-3 py-1.5 bg-[#13151f] border border-border rounded-md hover:bg-white/5 transition-colors flex items-center gap-2">
+          <button
+             onClick={() => setCurrentDate(new Date())}
+             className="text-sm px-3 py-1.5 bg-[#13151f] border border-border rounded-md hover:bg-white/5 transition-colors flex items-center gap-2"
+          >
             Mes Actual
           </button>
         </div>
@@ -140,11 +143,35 @@ export function MainCalendarView() {
                         return (
                            <div key={`cell-${i}`} className="w-12 shrink-0 border-r border-border/50 p-1 flex items-center justify-center relative">
                               {timeOff && (
-                                 <div
-                                    className="absolute inset-y-1.5 inset-x-0.5 rounded opacity-90 z-20"
-                                    style={{ backgroundColor: timeOff.type === 'vacaciones' ? '#22c55e' : '#6C6E7D' }}
-                                    title={`${timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre'}`}
-                                 />
+                                 <Popover>
+                                    <PopoverTrigger asChild>
+                                       <div
+                                          className="absolute inset-y-1.5 inset-x-0.5 rounded opacity-90 z-20 cursor-pointer hover:opacity-100 transition-opacity"
+                                          style={{ backgroundColor: timeOff.type === 'vacaciones' ? '#22c55e' : '#6C6E7D' }}
+                                          title={`${timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre'}`}
+                                       />
+                                    </PopoverTrigger>
+                                    {session?.role === 'admin' && (
+                                      <PopoverContent className="w-48 p-2 bg-[#1a1c29] border-border z-50">
+                                         <div className="flex flex-col gap-2 text-sm">
+                                            <div className="font-medium">{timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre'}</div>
+                                            <div className="text-xs text-muted-foreground mb-2">
+                                               {format(timeOff.startDate, "dd MMM")} - {format(timeOff.endDate, "dd MMM")}
+                                            </div>
+                                            <button
+                                               onClick={() => {
+                                                  if(window.confirm("¿Eliminar solicitud aprobada?")) {
+                                                     deleteTimeOffRequest(timeOff.id);
+                                                  }
+                                               }}
+                                               className="flex items-center gap-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 p-2 rounded transition-colors w-full text-left"
+                                            >
+                                               <Trash2 className="w-4 h-4" /> Eliminar Solicitud
+                                            </button>
+                                         </div>
+                                      </PopoverContent>
+                                    )}
+                                 </Popover>
                               )}
                               {guard && (
                                  <Popover>

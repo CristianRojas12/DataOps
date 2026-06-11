@@ -86,7 +86,7 @@ export function MainLayout() {
             {activeTab === "resumen" && (
               <button
                  onClick={() => setTimeOffModalOpen(true)}
-                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                 className="bg-green-600 hover:bg-green-700 text-white h-9 px-4 w-auto min-w-[140px] rounded-md text-sm font-medium transition-colors flex items-center justify-center"
               >
                  + Crear Solicitud
               </button>

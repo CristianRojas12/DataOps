@@ -1,10 +1,10 @@
 import { format } from "date-fns";
 import { useGuardContext } from "../context";
-import { CheckCircle2, XCircle, Clock } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react";
 import { Button } from "./ui/button";
 
 export function RequestsView() {
-  const { timeOffRequests, members, session, updateTimeOffRequestStatus } = useGuardContext();
+  const { timeOffRequests, members, session, updateTimeOffRequestStatus, deleteTimeOffRequest } = useGuardContext();
   const isAdmin = session?.role === 'admin';
 
   // Filter requests: if user, only theirs. If admin, all.
@@ -31,7 +31,7 @@ export function RequestsView() {
   return (
     <div className="flex flex-col h-full bg-[#0f111a] text-foreground p-6 overflow-hidden">
       <h2 className="text-xl font-medium mb-6 shrink-0">
-        {isAdmin ? "Bandeja de Solicitudes (Admin)" : "Mis Solicitudes"}
+        {isAdmin ? "Bandeja de Solicitudes" : "Mis Solicitudes"}
       </h2>
 
       <div className="flex-1 overflow-y-auto pr-4 pb-12">
@@ -63,22 +63,39 @@ export function RequestsView() {
                        <span className="font-medium text-sm">{getStatusLabel(req.status)}</span>
                     </div>
 
-                    {isAdmin && req.status === 'pending' && (
+                    {isAdmin && (
                        <div className="flex items-center gap-2">
+                          {req.status === 'pending' && (
+                             <>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="border-red-500/50 text-red-400 hover:bg-red-500/10"
+                                  onClick={() => updateTimeOffRequestStatus(req.id, 'rejected')}
+                                >
+                                   Rechazar
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  onClick={() => updateTimeOffRequestStatus(req.id, 'approved')}
+                                >
+                                   Aprobar
+                                </Button>
+                             </>
+                          )}
                           <Button
-                            variant="outline"
-                            size="sm"
-                            className="border-red-500/50 text-red-400 hover:bg-red-500/10"
-                            onClick={() => updateTimeOffRequestStatus(req.id, 'rejected')}
+                            variant="ghost"
+                            size="icon"
+                            className="text-red-400 hover:text-red-300 hover:bg-red-400/10 h-8 w-8 ml-2"
+                            onClick={() => {
+                               if (window.confirm("¿Seguro que deseas eliminar esta solicitud permanentemente?")) {
+                                  deleteTimeOffRequest(req.id);
+                               }
+                            }}
+                            title="Eliminar Solicitud"
                           >
-                             Rechazar
-                          </Button>
-                          <Button
-                            size="sm"
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                            onClick={() => updateTimeOffRequestStatus(req.id, 'approved')}
-                          >
-                             Aprobar
+                             <Trash2 className="w-4 h-4" />
                           </Button>
                        </div>
                     )}
