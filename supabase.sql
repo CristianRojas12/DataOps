@@ -52,13 +52,39 @@ CREATE POLICY "Allow admin update access to guards" ON public.guards FOR UPDATE 
 CREATE TABLE IF NOT EXISTS public.critical_products (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     name text NOT NULL,
-    url text NOT NULL,
+    -- Links variables: array de objetos { "label": text, "url": text, "kind": "databricks" | "powerbi" }.
+    -- "databricks" abre en pestaña nueva; "powerbi" copia al portapapeles.
+    links jsonb NOT NULL DEFAULT '[]'::jsonb,
+    -- Columnas legadas (links fijos). Quedan por compatibilidad; ya no las usa la app.
+    url text DEFAULT '',
     url2 text DEFAULT '',
     powerbi_url text DEFAULT '',
     teams_channel text DEFAULT '',
     schedules text[] NOT NULL DEFAULT '{}',
     enabled boolean NOT NULL DEFAULT true
 );
+
+-- Migración para bases ya existentes: agrega la columna y vuelca url/url2/powerbi_url
+-- a la nueva estructura de links. Idempotente: solo migra filas con links vacío.
+ALTER TABLE public.critical_products
+    ADD COLUMN IF NOT EXISTS links jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE public.critical_products ALTER COLUMN url DROP NOT NULL;
+
+UPDATE public.critical_products p
+SET links = COALESCE((
+    SELECT jsonb_agg(elem ORDER BY ord)
+    FROM (
+        SELECT 1 AS ord, jsonb_build_object('label', 'Link 1', 'url', p.url, 'kind', 'databricks') AS elem
+          WHERE p.url IS NOT NULL AND p.url <> ''
+        UNION ALL
+        SELECT 2, jsonb_build_object('label', 'Link 2', 'url', p.url2, 'kind', 'databricks')
+          WHERE p.url2 IS NOT NULL AND p.url2 <> ''
+        UNION ALL
+        SELECT 3, jsonb_build_object('label', 'PBI', 'url', p.powerbi_url, 'kind', 'powerbi')
+          WHERE p.powerbi_url IS NOT NULL AND p.powerbi_url <> ''
+    ) sub
+), '[]'::jsonb)
+WHERE p.links = '[]'::jsonb;
 
 -- Marcas de "Listo" compartidas. Una fila por (producto, horario, día).
 CREATE TABLE IF NOT EXISTS public.product_done (

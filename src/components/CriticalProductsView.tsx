@@ -13,7 +13,9 @@ function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const ROW_GRID = "64px minmax(160px,1fr) 240px 120px 320px";
+// Producto más angosto; Canal Teams y la zona de botones más anchos para que
+// entren varios links (ej: hasta 2 PBI + 4 Databricks) sin apretar el resto.
+const ROW_GRID = "60px 150px minmax(240px,1fr) 100px minmax(380px,1.6fr)";
 
 export function CriticalProductsView() {
   const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
@@ -116,20 +118,33 @@ export function CriticalProductsView() {
                         <span className="text-[#7db8e8]">Próximo</span>
                       )}
                     </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button size="sm" variant="secondary" className="h-8" onClick={() => window.open(task.product.url, "_blank")}>
-                        Link 1
-                      </Button>
-                      {task.product.url2 && (
-                        <Button size="sm" variant="secondary" className="h-8" onClick={() => window.open(task.product.url2, "_blank")}>
-                          Link 2
-                        </Button>
-                      )}
-                      {task.product.powerbi_url && (
-                        <Button size="sm" className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-white" onClick={() => copyPbi(task.product.powerbi_url, key)}>
-                          {copiedKey === key ? "✓ Copiado" : "📊 PBI"}
-                        </Button>
-                      )}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {(task.product.links ?? []).map((link, li) => {
+                        const linkKey = `${key}|${li}`;
+                        if (link.kind === "powerbi") {
+                          return (
+                            <Button
+                              key={li}
+                              size="sm"
+                              className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-white"
+                              onClick={() => copyPbi(link.url, linkKey)}
+                            >
+                              {copiedKey === linkKey ? "✓ Copiado" : `📊 ${link.label}`}
+                            </Button>
+                          );
+                        }
+                        return (
+                          <Button
+                            key={li}
+                            size="sm"
+                            variant="secondary"
+                            className="h-8"
+                            onClick={() => window.open(link.url, "_blank")}
+                          >
+                            {link.label}
+                          </Button>
+                        );
+                      })}
                       {task.done ? (
                         <Button size="sm" variant="outline" className="h-8" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
                           ↩
