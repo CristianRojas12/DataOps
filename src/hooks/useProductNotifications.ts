@@ -25,11 +25,13 @@ function saveNotified(set: Set<string>): void {
  * Dispara una notificación del navegador AGRUPADA por horario (sin sonido),
  * deduplicada por navegador/día vía localStorage. Portado de la versión vanilla.
  */
-export function useProductNotifications(products: CriticalProduct[], enabled: boolean) {
+export function useProductNotifications(products: CriticalProduct[], enabled: boolean, volume = 0.6) {
   const productsRef = useRef(products);
   productsRef.current = products;
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
 
   useEffect(() => {
     const check = () => {
@@ -52,7 +54,7 @@ export function useProductNotifications(products: CriticalProduct[], enabled: bo
 
       // Sonido suave "tilín" al llegar la hora (aunque el navegador no permita
       // la notificación visual; la web propia silencia esa con silent:true).
-      playNotificationChime();
+      playNotificationChime(volumeRef.current);
 
       if ("Notification" in window && Notification.permission === "granted") {
         const title =

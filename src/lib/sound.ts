@@ -21,11 +21,16 @@ export function primeAudio(): void {
 }
 
 // Reproduce el "tilín": dos notas sine cortas con envolvente suave (sin clicks).
-export function playNotificationChime(): void {
+// volume: 0..1 (default 0.6). El pico real se escala desde este valor.
+export function playNotificationChime(volume = 0.6): void {
+  const vol = Math.min(1, Math.max(0, volume));
+  if (vol <= 0) return; // mute total
+
   const ctx = getCtx();
   if (!ctx) return;
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
 
+  const peak = 0.3 * vol; // pico máximo de ganancia
   const now = ctx.currentTime;
   const notes = [
     { freq: 988, start: 0, dur: 0.16 }, // Si5
@@ -40,7 +45,7 @@ export function playNotificationChime(): void {
 
     const t0 = now + n.start;
     gain.gain.setValueAtTime(0.0001, t0);
-    gain.gain.linearRampToValueAtTime(0.16, t0 + 0.02); // ataque suave
+    gain.gain.linearRampToValueAtTime(peak, t0 + 0.02); // ataque suave
     gain.gain.exponentialRampToValueAtTime(0.0001, t0 + n.dur); // cola suave
 
     osc.connect(gain).connect(ctx.destination);
