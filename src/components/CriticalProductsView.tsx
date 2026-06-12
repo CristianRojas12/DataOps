@@ -22,7 +22,7 @@ export function CriticalProductsView() {
   const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
   const { session } = useGuardContext();
   const isAdmin = session?.role === 'admin';
-  const { productsAlertsEnabled, productsAddModalOpen, setProductsAddModalOpen } = useUiStore();
+  const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen } = useUiStore();
 
   const [now, setNow] = useState(new Date());
   const [editing, setEditing] = useState<CriticalProduct | null>(null);
@@ -41,7 +41,7 @@ export function CriticalProductsView() {
     }
   }, []);
 
-  useProductNotifications(products, productsAlertsEnabled);
+  useProductNotifications(products, productsAlertsEnabled, productsAlertVolume);
 
   const todayDow = now.getDay(); // 0=Dom … 6=Sáb
 

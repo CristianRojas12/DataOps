@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import type { CriticalProduct } from "../productsTypes";
+import { playNotificationChime } from "../lib/sound";
 
 function nowHM(): string {
   const d = new Date();
@@ -24,16 +25,17 @@ function saveNotified(set: Set<string>): void {
  * Dispara una notificación del navegador AGRUPADA por horario (sin sonido),
  * deduplicada por navegador/día vía localStorage. Portado de la versión vanilla.
  */
-export function useProductNotifications(products: CriticalProduct[], enabled: boolean) {
+export function useProductNotifications(products: CriticalProduct[], enabled: boolean, volume = 0.6) {
   const productsRef = useRef(products);
   productsRef.current = products;
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
+  const volumeRef = useRef(volume);
+  volumeRef.current = volume;
 
   useEffect(() => {
     const check = () => {
       if (!enabledRef.current) return;
-      if (!("Notification" in window) || Notification.permission !== "granted") return;
 
       const cur = nowHM();
       const dow = new Date().getDay(); // 0=Dom … 6=Sáb
@@ -50,11 +52,17 @@ export function useProductNotifications(products: CriticalProduct[], enabled: bo
         .map((p) => p.name);
       if (names.length === 0) return;
 
-      const title =
-        names.length === 1
-          ? `Ejecutar a las ${cur}: ${names[0]}`
-          : `${names.length} productos a las ${cur}`;
-      new Notification(title, { body: names.join(", "), silent: true });
+      // Sonido suave "tilín" al llegar la hora (aunque el navegador no permita
+      // la notificación visual; la web propia silencia esa con silent:true).
+      playNotificationChime(volumeRef.current);
+
+      if ("Notification" in window && Notification.permission === "granted") {
+        const title =
+          names.length === 1
+            ? `Ejecutar a las ${cur}: ${names[0]}`
+            : `${names.length} productos a las ${cur}`;
+        new Notification(title, { body: names.join(", "), silent: true });
+      }
 
       notified.add(cur);
       saveNotified(notified);
