@@ -112,6 +112,16 @@ CREATE POLICY "Public select product_done" ON public.product_done FOR SELECT USI
 CREATE POLICY "Public insert product_done" ON public.product_done FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public delete product_done" ON public.product_done FOR DELETE USING (true);
 
+-- Política de retención: borra las marcas "Listo" con más de 7 días.
+-- Corre a diario vía pg_cron (03:00 UTC ≈ 00:00 ART). El autovacuum recupera
+-- el espacio luego del DELETE, no hace falta VACUUM manual.
+CREATE EXTENSION IF NOT EXISTS pg_cron;
+SELECT cron.schedule(
+    'purge-product-done',
+    '0 3 * * *',
+    $$ DELETE FROM public.product_done WHERE day < current_date - 7 $$
+);
+
 -- ============================================================================
 -- Gestión de Días Libres y Vacaciones
 -- ============================================================================

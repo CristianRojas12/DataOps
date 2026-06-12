@@ -107,7 +107,7 @@ export function CriticalProductsView() {
                 return (
                   <div
                     key={key}
-                    className="grid items-center gap-3 px-4 py-3 rounded-lg"
+                    className="grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-125 hover:ring-2 hover:ring-white/40"
                     style={{ gridTemplateColumns: ROW_GRID, backgroundColor: bg }}
                   >
                     <div className="font-bold text-sm">{task.time}</div>
