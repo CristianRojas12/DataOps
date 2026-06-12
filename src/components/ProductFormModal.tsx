@@ -70,6 +70,15 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
     setLinks((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
   const addLinkRow = () => setLinks((prev) => [...prev, emptyLink(`Link ${prev.length + 1}`)]);
   const removeLinkRow = (i: number) => setLinks((prev) => prev.filter((_, idx) => idx !== i));
+  // Mueve un link arriba (dir=-1) o abajo (dir=+1) para reordenarlos.
+  const moveLink = (i: number, dir: -1 | 1) =>
+    setLinks((prev) => {
+      const j = i + dir;
+      if (j < 0 || j >= prev.length) return prev;
+      const next = [...prev];
+      [next[i], next[j]] = [next[j], next[i]];
+      return next;
+    });
 
   const setSchedAt = (i: number, value: string) =>
     setSchedules((prev) => prev.map((s, idx) => (idx === i ? value : s)));
@@ -164,6 +173,26 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     <option value="databricks">Databricks</option>
                     <option value="powerbi">Power BI</option>
                   </select>
+                  <div className="flex shrink-0 flex-col">
+                    <button
+                      type="button"
+                      onClick={() => moveLink(i, -1)}
+                      disabled={i === 0}
+                      title="Subir"
+                      className="px-1 text-xs leading-none text-muted-foreground hover:text-white disabled:opacity-30 disabled:hover:text-muted-foreground"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveLink(i, 1)}
+                      disabled={i === links.length - 1}
+                      title="Bajar"
+                      className="px-1 text-xs leading-none text-muted-foreground hover:text-white disabled:opacity-30 disabled:hover:text-muted-foreground"
+                    >
+                      ▼
+                    </button>
+                  </div>
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeLinkRow(i)} className="shrink-0 text-red-400 hover:text-red-300 hover:bg-white/5">
                     ✕
                   </Button>
