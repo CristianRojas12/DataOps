@@ -97,7 +97,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] bg-[#1a1c29] border-border text-foreground max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[520px] bg-white border-gray-200 text-gray-900 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal">
             {product ? "Editar producto crítico" : "Nuevo producto crítico"}
@@ -107,23 +107,23 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
         <div className="space-y-3">
           <div className="space-y-1">
             <Label>Nombre del producto</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-[#13151f] border-border" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-white border-gray-200" />
           </div>
           <div className="space-y-1">
             <Label>Link 1 — URL en Databricks</Label>
-            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://adb-xxx.azuredatabricks.net/..." className="bg-[#13151f] border-border" />
+            <Input value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://adb-xxx.azuredatabricks.net/..." className="bg-white border-gray-200" />
           </div>
           <div className="space-y-1">
             <Label>Link 2 — URL (opcional)</Label>
-            <Input value={url2} onChange={(e) => setUrl2(e.target.value)} placeholder="https://adb-xxx.azuredatabricks.net/..." className="bg-[#13151f] border-border" />
+            <Input value={url2} onChange={(e) => setUrl2(e.target.value)} placeholder="https://adb-xxx.azuredatabricks.net/..." className="bg-white border-gray-200" />
           </div>
           <div className="space-y-1">
             <Label>Link de Power BI (opcional)</Label>
-            <Input value={powerbi} onChange={(e) => setPowerbi(e.target.value)} placeholder="https://app.powerbi.com/..." className="bg-[#13151f] border-border" />
+            <Input value={powerbi} onChange={(e) => setPowerbi(e.target.value)} placeholder="https://app.powerbi.com/..." className="bg-white border-gray-200" />
           </div>
           <div className="space-y-1">
             <Label>Canal de Teams (opcional)</Label>
-            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-[#13151f] border-border" />
+            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-white border-gray-200" />
           </div>
 
           <div className="space-y-1">
@@ -135,7 +135,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     value={s}
                     onChange={(e) => setSchedAt(i, e.target.value)}
                     placeholder="06:00"
-                    className="w-32 bg-[#13151f] border-border"
+                    className="w-32 bg-white border-gray-200"
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeSchedRow(i)} className="text-red-400 hover:text-red-300 hover:bg-white/5">
                     ✕
@@ -143,7 +143,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                 </div>
               ))}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addSchedRow} className="mt-2 bg-[#13151f] border-border hover:bg-[#1f2233] hover:text-white">
+            <Button type="button" variant="outline" size="sm" onClick={addSchedRow} className="mt-2 bg-white border-gray-200 hover:bg-[#1f2233] hover:text-gray-900">
               + Agregar horario
             </Button>
           </div>
@@ -152,10 +152,10 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
         </div>
 
         <div className="flex justify-between pt-2">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/10">
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-gray-900 hover:bg-white/10">
             Cancelar
           </Button>
-          <Button type="button" onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+          <Button type="button" onClick={handleSave} disabled={saving} className="bg-amber-400 hover:bg-amber-500 text-gray-900">
             {saving ? "Guardando..." : "Guardar"}
           </Button>
         </div>

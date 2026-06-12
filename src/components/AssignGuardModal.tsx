@@ -119,11 +119,11 @@ export function AssignGuardModal() {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 h-9 px-4 w-auto min-w-[140px] rounded-md text-sm font-medium transition-colors flex items-center justify-center">
+        <Button className="bg-amber-400 hover:bg-amber-500 text-gray-900 gap-2 h-9 px-4 w-auto min-w-[140px] rounded-md text-sm font-medium transition-colors flex items-center justify-center">
           <span className="text-lg leading-none mb-[2px]">+</span> Asignar Guardias
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-[#1a1c29] border-border text-foreground">
+      <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-gray-900">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal">
             Asignar Guardias
@@ -143,11 +143,11 @@ export function AssignGuardModal() {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-[#13151f] border-border">
+                        <SelectTrigger className="bg-white border-gray-200">
                           <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-[#13151f] border-border">
+                      <SelectContent className="bg-white border-gray-200">
                         {members.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             {m.name}
@@ -171,11 +171,11 @@ export function AssignGuardModal() {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-[#13151f] border-border">
+                        <SelectTrigger className="bg-white border-gray-200">
                           <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-[#13151f] border-border">
+                      <SelectContent className="bg-white border-gray-200">
                         <SelectItem value="Guardia Matutina">
                           Guardia Matutina
                         </SelectItem>
@@ -202,8 +202,8 @@ export function AssignGuardModal() {
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full justify-start text-left font-normal bg-[#13151f] border-border hover:bg-[#1f2233] hover:text-white",
-                            !field.value?.from && "text-muted-foreground"
+                            "w-full justify-start text-left font-normal bg-white border-gray-200 hover:bg-[#1f2233] hover:text-gray-900",
+                            !field.value?.from && "text-gray-500"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -222,7 +222,7 @@ export function AssignGuardModal() {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-[#1a1c29] border-border" align="start">
+                    <PopoverContent className="w-auto p-0 bg-white border-gray-200" align="start">
                       <Calendar
                         mode="range"
                         defaultMonth={field.value?.from}
@@ -249,11 +249,11 @@ export function AssignGuardModal() {
                 type="button"
                 variant="ghost"
                 onClick={() => setOpen(false)}
-                className="text-white hover:bg-white/10"
+                className="text-gray-900 hover:bg-white/10"
               >
                 Cancelar
               </Button>
-              <Button type="submit" className="bg-indigo-600 hover:bg-indigo-700 text-white">
+              <Button type="submit" className="bg-amber-400 hover:bg-amber-500 text-gray-900">
                 Registrar Asignación
               </Button>
             </div>

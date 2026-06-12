@@ -76,14 +76,14 @@ export function CriticalProductsView() {
 
       <div className="flex-1 overflow-y-auto px-6 pb-12">
         {tasks.length === 0 ? (
-          <p className="text-muted-foreground text-center py-16">
+          <p className="text-gray-500 text-center py-16">
             No hay productos configurados. Hacé clic en "+ Agregar producto".
           </p>
         ) : (
           <>
             {/* Encabezado de columnas */}
             <div
-              className="grid items-center gap-3 px-4 py-2 text-xs uppercase tracking-wide text-muted-foreground"
+              className="grid items-center gap-3 px-4 py-2 text-xs uppercase tracking-wide text-gray-500"
               style={{ gridTemplateColumns: ROW_GRID }}
             >
               <div>Hora</div>
@@ -126,7 +126,7 @@ export function CriticalProductsView() {
                         </Button>
                       )}
                       {task.product.powerbi_url && (
-                        <Button size="sm" className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-white" onClick={() => copyPbi(task.product.powerbi_url, key)}>
+                        <Button size="sm" className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-gray-900" onClick={() => copyPbi(task.product.powerbi_url, key)}>
                           {copiedKey === key ? "✓ Copiado" : "📊 PBI"}
                         </Button>
                       )}
@@ -135,7 +135,7 @@ export function CriticalProductsView() {
                           ↩
                         </Button>
                       ) : (
-                        <Button size="sm" className="h-8 bg-green-700 hover:bg-green-600 text-white" onClick={() => markDone(task.product.id, task.time)}>
+                        <Button size="sm" className="h-8 bg-green-700 hover:bg-amber-400 text-gray-900" onClick={() => markDone(task.product.id, task.time)}>
                           Listo
                         </Button>
                       )}
@@ -148,13 +148,13 @@ export function CriticalProductsView() {
             {/* Gestión de productos (alta/edición/baja) */}
             {isAdmin && (
               <div className="mt-8">
-                <h3 className="text-sm font-medium text-muted-foreground mb-3">Productos configurados</h3>
+                <h3 className="text-sm font-medium text-gray-500 mb-3">Productos configurados</h3>
                 <div className="space-y-1.5">
                   {products.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between bg-[#13151f] rounded-lg px-4 py-3">
+                    <div key={p.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-3">
                       <div>
                         <div className="font-medium">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">
+                        <div className="text-xs text-gray-500">
                           Horarios: {(p.schedules ?? []).join("  ·  ") || "Sin horarios"}
                         </div>
                       </div>

@@ -27,7 +27,7 @@ export function CriticalProductsControls() {
 
   return (
     <div className="flex items-center gap-4">
-      <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer select-none">
+      <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
         <input
           type="checkbox"
           checked={productsAlertsEnabled}
@@ -38,7 +38,7 @@ export function CriticalProductsControls() {
       </label>
       <span className="text-lg tabular-nums">{hm(now)}</span>
       {isAdmin && (
-         <Button onClick={() => setProductsAddModalOpen(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2 h-9 px-4 w-auto min-w-[140px] rounded-md text-sm font-medium transition-colors flex items-center justify-center">
+         <Button onClick={() => setProductsAddModalOpen(true)} className="bg-amber-400 hover:bg-amber-500 text-gray-900 gap-2 h-9 px-4 w-auto min-w-[140px] rounded-md text-sm font-medium transition-colors flex items-center justify-center">
            <span className="text-lg leading-none mb-[2px]">+</span> Agregar producto
          </Button>
       )}

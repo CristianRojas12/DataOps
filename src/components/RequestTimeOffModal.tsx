@@ -51,10 +51,10 @@ export function RequestTimeOffModal() {
 
   return (
     <Dialog open={timeOffModalOpen} onOpenChange={setTimeOffModalOpen}>
-      <DialogContent className="bg-[#13151f] border-border text-foreground sm:max-w-[425px]">
+      <DialogContent className="bg-white border-gray-200 text-gray-900 sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Solicitar Días Libres</DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogDescription className="text-gray-500">
             Ingresa los detalles de tu solicitud. Tu solicitud quedará en estado pendiente.
           </DialogDescription>
         </DialogHeader>
@@ -65,17 +65,17 @@ export function RequestTimeOffModal() {
             <Input
               value={currentMember?.name || session?.user?.email || ""}
               disabled
-              className="bg-[#1a1c29] border-border text-gray-400 opacity-80 cursor-not-allowed"
+              className="bg-white border-gray-200 text-gray-600 opacity-80 cursor-not-allowed"
             />
           </div>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Tipo de Permiso</label>
             <Select value={type} onValueChange={(val) => setType(val as TimeOffType)}>
-              <SelectTrigger className="bg-[#1a1c29] border-border">
+              <SelectTrigger className="bg-white border-gray-200">
                 <SelectValue placeholder="Seleccionar tipo" />
               </SelectTrigger>
-              <SelectContent className="bg-[#1a1c29] border-border">
+              <SelectContent className="bg-white border-gray-200">
                 <SelectItem value="vacaciones">Vacaciones</SelectItem>
                 <SelectItem value="dia_guardia">Días X guardia</SelectItem>
               </SelectContent>
@@ -87,12 +87,12 @@ export function RequestTimeOffModal() {
               <label className="text-sm font-medium">Desde</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-[#1a1c29] border-border ${!startDate && "text-muted-foreground"}`}>
+                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-white border-gray-200 ${!startDate && "text-gray-500"}`}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {startDate ? format(startDate, "dd/MM/yyyy") : "Seleccionar"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-[#1a1c29] border-border">
+                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
                   <Calendar
                     mode="single"
                     selected={startDate}
@@ -107,12 +107,12 @@ export function RequestTimeOffModal() {
               <label className="text-sm font-medium">Hasta</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-[#1a1c29] border-border ${!endDate && "text-muted-foreground"}`}>
+                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-white border-gray-200 ${!endDate && "text-gray-500"}`}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {endDate ? format(endDate, "dd/MM/yyyy") : "Seleccionar"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-[#1a1c29] border-border">
+                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
                   <Calendar
                     mode="single"
                     selected={endDate}
@@ -130,16 +130,16 @@ export function RequestTimeOffModal() {
                placeholder="Comentarios adicionales..."
                value={reason}
                onChange={(e: any) => setReason(e.target.value)}
-               className="flex w-full rounded-md px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 bg-[#1a1c29] border border-border min-h-[80px]"
+               className="flex w-full rounded-md px-3 py-2 text-sm placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 bg-white border border-gray-200 min-h-[80px]"
             />
           </div>
 
         </div>
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setTimeOffModalOpen(false)} className="border-border hover:bg-white/5">
+          <Button variant="outline" onClick={() => setTimeOffModalOpen(false)} className="border-gray-200 hover:bg-white/5">
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} className="bg-indigo-600 hover:bg-indigo-700 text-white" disabled={!startDate || !endDate}>
+          <Button onClick={handleSubmit} className="bg-amber-400 hover:bg-amber-500 text-gray-900" disabled={!startDate || !endDate}>
             Confirmar
           </Button>
         </div>
