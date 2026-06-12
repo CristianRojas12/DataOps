@@ -36,11 +36,17 @@ export function useProductNotifications(products: CriticalProduct[], enabled: bo
       if (!("Notification" in window) || Notification.permission !== "granted") return;
 
       const cur = nowHM();
+      const dow = new Date().getDay(); // 0=Dom … 6=Sáb
       const notified = getNotified();
       if (notified.has(cur)) return;
 
       const names = productsRef.current
-        .filter((p) => p.enabled && (p.schedules ?? []).includes(cur))
+        .filter(
+          (p) =>
+            p.enabled &&
+            (p.days ?? [1, 2, 3, 4, 5]).includes(dow) &&
+            (p.schedules ?? []).includes(cur),
+        )
         .map((p) => p.name);
       if (names.length === 0) return;
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 
 import { useProductsContext } from "../productsContext";
 import type { CriticalProduct, ProductLink, ProductLinkKind } from "../productsTypes";
+import { WEEKDAYS, DEFAULT_DAYS } from "../productsTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +47,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
   const [name, setName] = useState("");
   const [teams, setTeams] = useState("");
   const [links, setLinks] = useState<ProductLink[]>([emptyLink("Link 1")]);
+  const [days, setDays] = useState<number[]>(DEFAULT_DAYS);
   const [schedules, setSchedules] = useState<string[]>([""]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -57,8 +59,12 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
     setName(product?.name ?? "");
     setTeams(product?.teams_channel ?? "");
     setLinks(product?.links?.length ? product.links.map((l) => ({ ...l })) : [emptyLink("Link 1")]);
+    setDays(product?.days?.length ? [...product.days] : DEFAULT_DAYS);
     setSchedules(product?.schedules?.length ? [...product.schedules] : [""]);
   }, [open, product]);
+
+  const toggleDay = (value: number) =>
+    setDays((prev) => (prev.includes(value) ? prev.filter((d) => d !== value) : [...prev, value]));
 
   const setLinkAt = (i: number, patch: Partial<ProductLink>) =>
     setLinks((prev) => prev.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
@@ -85,6 +91,8 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
     }
     if (cleanLinks.length === 0) { setError("Agregá al menos un link con su URL."); return; }
 
+    if (days.length === 0) { setError("Seleccioná al menos un día de ejecución."); return; }
+
     const norm = normalizeSchedules(schedules);
     if (!norm.ok) { setError(norm.error); return; }
 
@@ -93,6 +101,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
       links: cleanLinks,
       teams_channel: teams.trim(),
       schedules: norm.value,
+      days: [...days].sort((a, b) => a - b),
       enabled: true,
     };
 
@@ -164,6 +173,30 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
             <Button type="button" variant="outline" size="sm" onClick={addLinkRow} className="mt-2 bg-[#13151f] border-border hover:bg-[#1f2233] hover:text-white">
               + Agregar link
             </Button>
+          </div>
+
+          <div className="space-y-1">
+            <Label>Días de ejecución</Label>
+            <div className="flex flex-wrap gap-2">
+              {WEEKDAYS.map((d) => {
+                const active = days.includes(d.value);
+                return (
+                  <button
+                    key={d.value}
+                    type="button"
+                    onClick={() => toggleDay(d.value)}
+                    aria-pressed={active}
+                    className={`h-9 w-12 rounded-md border text-sm font-medium transition-colors ${
+                      active
+                        ? "bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700"
+                        : "bg-[#13151f] border-border text-muted-foreground hover:bg-[#1f2233] hover:text-white"
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
 
           <div className="space-y-1">

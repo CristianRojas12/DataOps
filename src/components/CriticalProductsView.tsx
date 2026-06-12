@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useProductsContext } from "../productsContext";
 import { useProductNotifications } from "../hooks/useProductNotifications";
 import type { CriticalProduct, ProductTask } from "../productsTypes";
+import { WEEKDAYS } from "../productsTypes";
 import { ProductFormModal } from "./ProductFormModal";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Button } from "@/components/ui/button";
@@ -42,16 +43,19 @@ export function CriticalProductsView() {
 
   useProductNotifications(products, productsAlertsEnabled);
 
+  const todayDow = now.getDay(); // 0=Dom … 6=Sáb
+
   const tasks = useMemo<ProductTask[]>(() => {
     const list: ProductTask[] = [];
     for (const p of products) {
       if (!p.enabled) continue;
+      if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) continue; // no ejecuta hoy
       for (const t of p.schedules ?? []) {
         list.push({ product: p, time: t, done: doneKeys.has(`${p.id}|${t}`) });
       }
     }
     return list.sort((a, b) => a.time.localeCompare(b.time));
-  }, [products, doneKeys]);
+  }, [products, doneKeys, todayDow]);
 
   const cur = hm(now);
 
@@ -169,6 +173,9 @@ export function CriticalProductsView() {
                     <div key={p.id} className="flex items-center justify-between bg-[#13151f] rounded-lg px-4 py-3">
                       <div>
                         <div className="font-medium">{p.name}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Días: {WEEKDAYS.filter((d) => (p.days ?? []).includes(d.value)).map((d) => d.label).join(" · ") || "Sin días"}
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           Horarios: {(p.schedules ?? []).join("  ·  ") || "Sin horarios"}
                         </div>

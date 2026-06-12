@@ -61,6 +61,8 @@ CREATE TABLE IF NOT EXISTS public.critical_products (
     powerbi_url text DEFAULT '',
     teams_channel text DEFAULT '',
     schedules text[] NOT NULL DEFAULT '{}',
+    -- Días que ejecuta (0=Dom … 6=Sáb). Default Lunes a Viernes.
+    days int[] NOT NULL DEFAULT '{1,2,3,4,5}',
     enabled boolean NOT NULL DEFAULT true
 );
 
@@ -68,6 +70,8 @@ CREATE TABLE IF NOT EXISTS public.critical_products (
 -- a la nueva estructura de links. Idempotente: solo migra filas con links vacío.
 ALTER TABLE public.critical_products
     ADD COLUMN IF NOT EXISTS links jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE public.critical_products
+    ADD COLUMN IF NOT EXISTS days int[] NOT NULL DEFAULT '{1,2,3,4,5}';
 ALTER TABLE public.critical_products ALTER COLUMN url DROP NOT NULL;
 
 UPDATE public.critical_products p
