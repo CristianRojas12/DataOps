@@ -17,8 +17,23 @@ export interface CriticalProduct {
   links: ProductLink[]; // cantidad variable de links con nombre y tipo
   teams_channel: string;
   schedules: string[]; // horarios "HH:MM"
+  days: number[]; // días que ejecuta (0=Dom … 6=Sáb). Default Lun-Vie [1,2,3,4,5]
   enabled: boolean;
 }
+
+// Días de la semana en orden Lun→Dom para los botones del formulario.
+export const WEEKDAYS: ReadonlyArray<{ value: number; label: string }> = [
+  { value: 1, label: "Lun" },
+  { value: 2, label: "Mar" },
+  { value: 3, label: "Mié" },
+  { value: 4, label: "Jue" },
+  { value: 5, label: "Vie" },
+  { value: 6, label: "Sáb" },
+  { value: 0, label: "Dom" },
+];
+
+// Selección por defecto: Lunes a Viernes.
+export const DEFAULT_DAYS: number[] = [1, 2, 3, 4, 5];
 
 // Para crear/editar (sin id).
 export type CriticalProductInput = Omit<CriticalProduct, "id">;

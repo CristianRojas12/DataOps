@@ -45,6 +45,7 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
         (prodRes.data ?? []).map((p: any) => ({
           ...p,
           links: Array.isArray(p.links) ? p.links : [],
+          days: Array.isArray(p.days) ? p.days : [1, 2, 3, 4, 5],
         })) as CriticalProduct[],
       );
 
