@@ -30,7 +30,7 @@ export function playNotificationChime(volume = 0.6): void {
   if (!ctx) return;
   if (ctx.state === "suspended") ctx.resume().catch(() => {});
 
-  const peak = 0.3 * vol; // pico máximo de ganancia
+  const peak = 0.8 * vol; // pico máximo de ganancia
   const now = ctx.currentTime;
   const notes = [
     { freq: 988, start: 0, dur: 0.16 }, // Si5
