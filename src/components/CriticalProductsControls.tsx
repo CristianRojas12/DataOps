@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useUiStore } from "../store";
 import { useGuardContext } from "../context";
+import { primeAudio, playNotificationChime } from "../lib/sound";
 
 function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -20,8 +21,14 @@ export function CriticalProductsControls() {
 
   const toggleAlerts = (checked: boolean) => {
     setProductsAlertsEnabled(checked);
-    if (checked && "Notification" in window && Notification.permission === "default") {
-      Notification.requestPermission();
+    if (checked) {
+      // Gesto del usuario: desbloquea el audio y reproduce el "tilín" como
+      // confirmación de que el sonido quedó activo.
+      primeAudio();
+      playNotificationChime();
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission();
+      }
     }
   };
 
