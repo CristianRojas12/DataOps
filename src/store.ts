@@ -15,6 +15,8 @@ interface UiState {
   // Critical products controls state
   productsAlertsEnabled: boolean;
   setProductsAlertsEnabled: (enabled: boolean) => void;
+  productsAlertVolume: number; // 0..1
+  setProductsAlertVolume: (volume: number) => void;
   productsAddModalOpen: boolean;
   setProductsAddModalOpen: (open: boolean) => void;
 
@@ -28,6 +30,15 @@ export const useUiStore = create<UiState>((set) => ({
   setProductsAlertsEnabled: (enabled) => {
     localStorage.setItem("pc_alerts", enabled ? "true" : "false");
     set({ productsAlertsEnabled: enabled });
+  },
+  productsAlertVolume: (() => {
+    const v = parseFloat(localStorage.getItem("pc_volume") ?? "");
+    return Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0.6;
+  })(),
+  setProductsAlertVolume: (volume) => {
+    const clamped = Math.min(1, Math.max(0, volume));
+    localStorage.setItem("pc_volume", String(clamped));
+    set({ productsAlertVolume: clamped });
   },
   productsAddModalOpen: false,
   setProductsAddModalOpen: (open) => set({ productsAddModalOpen: open }),
