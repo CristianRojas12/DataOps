@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useProductsContext } from "../productsContext";
 import { useProductNotifications } from "../hooks/useProductNotifications";
 import type { CriticalProduct, ProductTask } from "../productsTypes";
+import { WEEKDAYS } from "../productsTypes";
 import { ProductFormModal } from "./ProductFormModal";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Button } from "@/components/ui/button";
@@ -13,13 +14,13 @@ function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const ROW_GRID = "64px minmax(160px,1fr) 240px 120px 320px";
+const ROW_GRID = "60px 150px minmax(240px,1fr) 100px minmax(380px,1.6fr)";
 
 export function CriticalProductsView() {
   const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
   const { session } = useGuardContext();
   const isAdmin = session?.role === 'admin';
-  const { productsAlertsEnabled, productsAddModalOpen, setProductsAddModalOpen } = useUiStore();
+  const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen } = useUiStore();
 
   const [now, setNow] = useState(new Date());
   const [editing, setEditing] = useState<CriticalProduct | null>(null);
@@ -27,7 +28,7 @@ export function CriticalProductsView() {
 
   // Reloj para recalcular estados (próximo/pendiente) y reflejar la hora.
   useEffect(() => {
-    const id = setInterval(() => setNow(new Date()), 15_000);
+    const id = setInterval(() => setNow(new Date()), 10_000);
     return () => clearInterval(id);
   }, []);
 
@@ -38,18 +39,21 @@ export function CriticalProductsView() {
     }
   }, []);
 
-  useProductNotifications(products, productsAlertsEnabled);
+  useProductNotifications(products, productsAlertsEnabled, productsAlertVolume);
+
+  const todayDow = now.getDay(); // 0=Dom … 6=Sáb
 
   const tasks = useMemo<ProductTask[]>(() => {
     const list: ProductTask[] = [];
     for (const p of products) {
       if (!p.enabled) continue;
+      if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) continue; // no ejecuta hoy
       for (const t of p.schedules ?? []) {
         list.push({ product: p, time: t, done: doneKeys.has(`${p.id}|${t}`) });
       }
     }
     return list.sort((a, b) => a.time.localeCompare(b.time));
-  }, [products, doneKeys]);
+  }, [products, doneKeys, todayDow]);
 
   const cur = hm(now);
 
@@ -59,9 +63,9 @@ export function CriticalProductsView() {
     try {
       await navigator.clipboard.writeText(url);
       setCopiedKey(key);
-      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1500);
-    } catch {
-      window.prompt("Copiá el link de Power BI:", url);
+      setTimeout(() => setCopiedKey(null), 2000);
+    } catch (e) {
+      console.error("Failed to copy:", e);
     }
   };
 
@@ -90,52 +94,65 @@ export function CriticalProductsView() {
               <div>Producto</div>
               <div>Canal Teams</div>
               <div>Estado</div>
-              <div></div>
+              <div className="text-right">Acciones</div>
             </div>
 
             <div className="space-y-1.5">
               {tasks.map((task) => {
                 const past = task.time < cur && !task.done;
-                const bg = task.done ? "#234d22" : past ? "#4d2222" : "#1a3350";
+                const bg = task.done ? "#d1fae5" : past ? "#fee2e2" : "#f1f5f9"; // Updated for light mode
                 const key = `${task.product.id}|${task.time}`;
                 return (
                   <div
                     key={key}
-                    className="grid items-center gap-3 px-4 py-3 rounded-lg"
+                    className="grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-105 hover:ring-2 hover:ring-gray-200"
                     style={{ gridTemplateColumns: ROW_GRID, backgroundColor: bg }}
                   >
-                    <div className="font-bold text-sm">{task.time}</div>
-                    <div className="text-sm">{task.product.name}</div>
-                    <div className="text-xs text-[#a0c4e8]">{task.product.teams_channel || "—"}</div>
-                    <div className="text-xs">
+                    <div className="font-bold text-sm text-gray-900">{task.time}</div>
+                    <div className="text-sm text-gray-900">{task.product.name}</div>
+                    <div className="text-xs text-blue-600">{task.product.teams_channel || "—"}</div>
+                    <div className="text-xs font-medium">
                       {task.done ? (
-                        <span className="text-[#6dbf67]">✓ Listo</span>
+                        <span className="text-emerald-700">✓ Listo</span>
                       ) : past ? (
-                        <span className="text-[#e87070]">⚠ Pendiente</span>
+                        <span className="text-red-600">⚠ Pendiente</span>
                       ) : (
-                        <span className="text-[#7db8e8]">Próximo</span>
+                        <span className="text-blue-600">Próximo</span>
                       )}
                     </div>
-                    <div className="flex items-center justify-end gap-2">
-                      <Button size="sm" variant="secondary" className="h-8" onClick={() => window.open(task.product.url, "_blank")}>
-                        Link 1
-                      </Button>
-                      {task.product.url2 && (
-                        <Button size="sm" variant="secondary" className="h-8" onClick={() => window.open(task.product.url2, "_blank")}>
-                          Link 2
-                        </Button>
-                      )}
-                      {task.product.powerbi_url && (
-                        <Button size="sm" className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-gray-900" onClick={() => copyPbi(task.product.powerbi_url, key)}>
-                          {copiedKey === key ? "✓ Copiado" : "📊 PBI"}
-                        </Button>
-                      )}
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      {(task.product.links ?? []).map((link, li) => {
+                        const linkKey = `${key}|${li}`;
+                        if (link.kind === "powerbi") {
+                          return (
+                            <Button
+                              key={li}
+                              size="sm"
+                              className="h-8 bg-blue-100 hover:bg-blue-200 text-blue-900"
+                              onClick={() => copyPbi(link.url, linkKey)}
+                            >
+                              {copiedKey === linkKey ? "✓ Copiado" : `📊 ${link.label}`}
+                            </Button>
+                          );
+                        }
+                        return (
+                          <Button
+                            key={li}
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
+                            onClick={() => window.open(link.url, "_blank")}
+                          >
+                            {link.label}
+                          </Button>
+                        );
+                      })}
                       {task.done ? (
-                        <Button size="sm" variant="outline" className="h-8" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
+                        <Button size="sm" variant="outline" className="h-8 border-gray-200 text-gray-900 hover:bg-gray-50" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
                           ↩
                         </Button>
                       ) : (
-                        <Button size="sm" className="h-8 bg-green-700 hover:bg-amber-400 text-gray-900" onClick={() => markDone(task.product.id, task.time)}>
+                        <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={() => markDone(task.product.id, task.time)}>
                           Listo
                         </Button>
                       )}
@@ -151,22 +168,22 @@ export function CriticalProductsView() {
                 <h3 className="text-sm font-medium text-gray-500 mb-3">Productos configurados</h3>
                 <div className="space-y-1.5">
                   {products.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between bg-white rounded-lg px-4 py-3">
+                    <div key={p.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                       <div>
-                        <div className="font-medium">{p.name}</div>
+                        <div className="font-medium text-gray-900">{p.name}</div>
+                        <div className="text-xs text-gray-500">
+                          Días: {WEEKDAYS.filter((d) => (p.days ?? []).includes(d.value)).map((d) => d.label).join(" · ") || "Sin días"}
+                        </div>
                         <div className="text-xs text-gray-500">
                           Horarios: {(p.schedules ?? []).join("  ·  ") || "Sin horarios"}
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Button size="sm" variant="secondary" className="h-8" onClick={() => openEdit(p)}>Editar</Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          className="h-8"
-                          onClick={() => { if (confirm(`¿Eliminar "${p.name}"?`)) removeProduct(p.id); }}
-                        >
-                          Eliminar
+                      <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" className="h-8 border-gray-200 text-gray-900 hover:bg-gray-50" onClick={() => openEdit(p)}>
+                          Editar
+                        </Button>
+                        <Button size="sm" variant="ghost" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => removeProduct(p.id)}>
+                          Borrar
                         </Button>
                       </div>
                     </div>
@@ -179,12 +196,9 @@ export function CriticalProductsView() {
       </div>
 
       <ProductFormModal
-         open={productsAddModalOpen}
-         onOpenChange={(open) => {
-            setProductsAddModalOpen(open);
-            if (!open) setEditing(null);
-         }}
-         product={editing}
+        open={productsAddModalOpen}
+        onOpenChange={(v) => { setProductsAddModalOpen(v); if (!v) setEditing(null); }}
+        product={editing}
       />
     </div>
   );
