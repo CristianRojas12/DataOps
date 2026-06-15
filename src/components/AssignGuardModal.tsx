@@ -202,7 +202,7 @@ export function AssignGuardModal() {
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full justify-start text-left font-normal bg-white border-gray-200 hover:bg-[#1f2233] hover:text-gray-900",
+                            "w-full justify-start text-left font-normal bg-white border-gray-200 hover:bg-gray-50",
                             !field.value?.from && "text-gray-500"
                           )}
                         >
