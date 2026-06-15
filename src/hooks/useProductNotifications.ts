@@ -27,7 +27,6 @@ function saveNotified(set: Set<string>): void {
  */
 export function useProductNotifications(products: CriticalProduct[], enabled: boolean, volume = 0.6) {
   const productsRef = useRef(products);
-  productsRef.current = products;
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
   const volumeRef = useRef(volume);

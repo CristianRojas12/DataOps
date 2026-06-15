@@ -29,7 +29,7 @@ export function RequestsView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0f111a] text-foreground p-6 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50 text-gray-900 p-6 overflow-hidden">
       <h2 className="text-xl font-medium mb-6 shrink-0">
         {isAdmin ? "Bandeja de Solicitudes" : "Mis Solicitudes"}
       </h2>
@@ -40,20 +40,20 @@ export function RequestsView() {
              const member = members.find(m => m.id === req.memberId);
 
              return (
-               <div key={req.id} className="bg-[#13151f] border border-border rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+               <div key={req.id} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                       <span className="font-medium text-white">{member?.name}</span>
+                       <span className="font-medium text-gray-900">{member?.name}</span>
                        <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
                           {req.type === 'vacaciones' ? 'Vacaciones' : 'Días x Guardia'}
                        </span>
                     </div>
-                    <div className="text-sm text-muted-foreground flex gap-4">
+                    <div className="text-sm text-gray-500 flex gap-4">
                        <span>Del: {format(req.startDate, 'dd/MM/yyyy')}</span>
                        <span>Al: {format(req.endDate, 'dd/MM/yyyy')}</span>
                     </div>
                     {req.reason && (
-                       <p className="text-sm text-gray-400 mt-2 italic">"{req.reason}"</p>
+                       <p className="text-sm text-gray-600 mt-2 italic">"{req.reason}"</p>
                     )}
                  </div>
 
@@ -77,7 +77,7 @@ export function RequestsView() {
                                 </Button>
                                 <Button
                                   size="sm"
-                                  className="bg-green-600 hover:bg-green-700 text-white"
+                                  className="bg-amber-400 hover:bg-amber-500 text-gray-900"
                                   onClick={() => updateTimeOffRequestStatus(req.id, 'approved')}
                                 >
                                    Aprobar
@@ -105,7 +105,7 @@ export function RequestsView() {
           })}
 
           {visibleRequests.length === 0 && (
-             <div className="text-center text-muted-foreground py-12 border border-dashed border-border rounded-lg bg-[#13151f]/50">
+             <div className="text-center text-gray-500 py-12 border border-dashed border-gray-200 rounded-lg bg-white/50">
                No hay solicitudes para mostrar.
              </div>
           )}

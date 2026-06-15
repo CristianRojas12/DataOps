@@ -16,16 +16,13 @@ import {
 interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  product: CriticalProduct | null; // null = alta
+  product: CriticalProduct | null;
 }
 
-// Valida y normaliza horarios HH:MM (00:00-23:59), ordena y deduplica.
-// Portado de NotebookForm._save de la app original.
-function normalizeSchedules(values: string[]): { ok: true; value: string[] } | { ok: false; error: string } {
+function normalizeSchedules(rawList: string[]): { ok: true; value: string[] } | { ok: false; error: string } {
   const out: string[] = [];
-  for (const rawValue of values) {
-    const raw = (rawValue ?? "").trim();
-    if (!raw) continue;
+  for (const raw of rawList) {
+    if (!raw.trim()) continue;
     const parts = raw.split(":");
     const h = Number(parts[0]);
     const m = Number(parts[1]);
@@ -114,8 +111,8 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
       enabled: true,
     };
 
-    setSaving(true);
     try {
+      setSaving(true);
       if (product) await updateProduct(product.id, payload);
       else await addProduct(payload);
       onOpenChange(false);
@@ -237,15 +234,15 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     value={s}
                     onChange={(e) => setSchedAt(i, e.target.value)}
                     placeholder="06:00"
-                    className="w-32 bg-[#13151f] border-border"
+                    className="w-32 bg-white border-gray-200"
                   />
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeSchedRow(i)} className="text-red-400 hover:text-red-300 hover:bg-white/5">
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeSchedRow(i)} className="text-red-500 hover:text-red-600 hover:bg-gray-100">
                     ✕
                   </Button>
                 </div>
               ))}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addSchedRow} className="mt-2 bg-[#13151f] border-border hover:bg-[#1f2233] hover:text-white">
+            <Button type="button" variant="outline" size="sm" onClick={addSchedRow} className="mt-2 bg-white border-gray-200 hover:bg-gray-100 hover:text-gray-900">
               + Agregar horario
             </Button>
           </div>
@@ -254,10 +251,10 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
         </div>
 
         <div className="flex justify-between pt-2">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/10">
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-gray-900 hover:bg-gray-100">
             Cancelar
           </Button>
-          <Button type="button" onClick={handleSave} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+          <Button type="button" onClick={handleSave} disabled={saving} className="bg-amber-400 hover:bg-amber-500 text-gray-900">
             {saving ? "Guardando..." : "Guardar"}
           </Button>
         </div>

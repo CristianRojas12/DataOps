@@ -29,11 +29,11 @@ export function MainCalendarView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-[#0f111a] text-foreground p-6 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50 text-gray-900 p-6 overflow-hidden">
       {/* Calendar Header Tools */}
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="flex items-center bg-[#13151f] rounded-md border border-border p-1">
+          <div className="flex items-center bg-white rounded-md border border-gray-200 p-1">
             <button onClick={prevMonth} className="p-1.5 hover:bg-white/5 rounded-md transition-colors"><ChevronLeft className="w-4 h-4" /></button>
             <span className="min-w-[120px] text-center font-medium capitalize text-sm">
               {format(currentDate, "MMMM yyyy", { locale: es })}
@@ -42,7 +42,7 @@ export function MainCalendarView() {
           </div>
           <button
              onClick={() => setCurrentDate(new Date())}
-             className="text-sm px-3 py-1.5 bg-[#13151f] border border-border rounded-md hover:bg-white/5 transition-colors flex items-center gap-2"
+             className="text-sm px-3 py-1.5 bg-white border border-gray-200 rounded-md hover:bg-white/5 transition-colors flex items-center gap-2"
           >
             Mes Actual
           </button>
@@ -50,42 +50,42 @@ export function MainCalendarView() {
 
         <div className="flex items-center gap-4">
             <div className="relative">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
               <input
                  type="text"
                  placeholder="Buscar miembro..."
-                 className="pl-9 pr-4 py-1.5 bg-[#13151f] border border-border rounded-md text-sm w-64 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                 className="pl-9 pr-4 py-1.5 bg-white border border-gray-200 rounded-md text-sm w-64 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               />
             </div>
             <div className="flex items-center gap-3 text-xs flex-wrap justify-end max-w-sm">
                <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#F97316" }}></span>
-                  <span className="text-muted-foreground">Matutina</span>
+                  <span className="text-gray-500">Matutina</span>
                </div>
                <div className="flex items-center gap-1.5">
                   <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#A855F7" }}></span>
-                  <span className="text-muted-foreground">Vespertina</span>
+                  <span className="text-gray-500">Vespertina</span>
                </div>
                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-green-500"></span>
-                  <span className="text-muted-foreground">Vacaciones</span>
+                  <span className="w-3 h-3 rounded-sm bg-emerald-100"></span>
+                  <span className="text-gray-500">Vacaciones</span>
                </div>
                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#6C6E7D" }}></span>
-                  <span className="text-muted-foreground">Día Libre</span>
+                  <span className="w-3 h-3 rounded-sm" style={{ backgroundColor: "#f1f5f9" }}></span>
+                  <span className="text-gray-500">Día Libre</span>
                </div>
             </div>
         </div>
       </div>
 
       {/* Main Grid Area - Horizontal Scroll */}
-      <div className="flex-1 overflow-x-auto overflow-y-auto border border-border rounded-lg bg-[#13151f] relative">
+      <div className="flex-1 overflow-x-auto overflow-y-auto border border-gray-200 rounded-lg bg-white relative">
          <div className="w-max min-w-full">
             {/* Header Row (Days) */}
-            <div className="flex border-b border-border sticky top-0 bg-[#13151f] z-40">
+            <div className="flex border-b border-gray-200 sticky top-0 bg-white z-40">
                {/* Fixed Member Column Header */}
-               <div className="w-48 shrink-0 border-r border-border p-3 sticky left-0 z-50 bg-[#13151f]">
-                  <span className="text-sm font-medium text-muted-foreground">Miembros ({members.length})</span>
+               <div className="w-48 shrink-0 border-r border-gray-200 p-3 sticky left-0 z-50 bg-white">
+                  <span className="text-sm font-medium text-gray-500">Miembros ({members.length})</span>
                </div>
 
                {/* Days Headers */}
@@ -93,9 +93,9 @@ export function MainCalendarView() {
                   const dim = getDayDim(day);
                   const isHol = dim?.is_holiday ?? false;
                   return (
-                  <div key={`header-${i}`} className={`w-12 shrink-0 flex flex-col items-center justify-center py-2 border-r border-border relative ${isHol ? 'bg-amber-500/10 text-amber-200' : 'bg-[#13151f]'}`} title={isHol ? dim?.holiday_name || "Feriado" : ""}>
+                  <div key={`header-${i}`} className={`w-12 shrink-0 flex flex-col items-center justify-center py-2 border-r border-gray-200 relative ${isHol ? 'bg-amber-500/10 text-amber-200' : 'bg-white'}`} title={isHol ? dim?.holiday_name || "Feriado" : ""}>
                      {isHol && <span className="absolute top-1 right-1 w-1 h-1 bg-amber-500 rounded-full"></span>}
-                     <span className={`text-[10px] uppercase ${isHol ? 'text-amber-200' : 'text-muted-foreground'}`}>{format(day, "EEEEEE", { locale: es })}</span>
+                     <span className={`text-[10px] uppercase ${isHol ? 'text-amber-200' : 'text-gray-500'}`}>{format(day, "EEEEEE", { locale: es })}</span>
                      <span className={`text-sm font-medium ${isHol ? 'text-amber-400' : ''}`}>{format(day, "d")}</span>
                   </div>
                )})}
@@ -104,13 +104,13 @@ export function MainCalendarView() {
             {/* Members Rows */}
             <div className="flex flex-col relative z-0">
                {members.map(member => (
-                  <div key={member.id} className="flex border-b border-border/50 hover:bg-white/[0.02] transition-colors group">
+                  <div key={member.id} className="flex border-b border-gray-200/50 hover:bg-white/[0.02] transition-colors group">
                      {/* Sticky Member Name */}
-                     <div className="w-48 shrink-0 border-r border-border p-3 flex items-center sticky left-0 z-30 bg-[#13151f] group-hover:bg-[#1a1c29] transition-colors">
+                     <div className="w-48 shrink-0 border-r border-gray-200 p-3 flex items-center sticky left-0 z-30 bg-white group-hover:bg-white transition-colors">
                         <div className="w-6 h-6 rounded bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-medium mr-3">
                            {member.name.charAt(0).toUpperCase()}
                         </div>
-                        <span className="text-sm text-gray-200 truncate">{member.name}</span>
+                        <span className="text-sm text-gray-900 truncate">{member.name}</span>
                      </div>
 
                      {/* Days Cells */}
@@ -127,21 +127,21 @@ export function MainCalendarView() {
                         );
 
                         return (
-                           <div key={`cell-${i}`} className="w-12 shrink-0 border-r border-border/50 p-1 flex items-center justify-center relative">
+                           <div key={`cell-${i}`} className="w-12 shrink-0 border-r border-gray-200/50 p-1 flex items-center justify-center relative">
                               {timeOff && (
                                  <Popover>
                                     <PopoverTrigger asChild>
                                        <div
                                           className="absolute inset-y-1.5 inset-x-0.5 rounded opacity-90 z-20 cursor-pointer hover:opacity-100 transition-opacity"
-                                          style={{ backgroundColor: timeOff.type === 'vacaciones' ? '#22c55e' : '#6C6E7D' }}
+                                          style={{ backgroundColor: timeOff.type === 'vacaciones' ? '#d1fae5' : '#f1f5f9' }}
                                           title={`${timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre'}`}
                                        />
                                     </PopoverTrigger>
                                     {session?.role === 'admin' && (
-                                      <PopoverContent className="w-48 p-2 bg-[#1a1c29] border-border z-50">
+                                      <PopoverContent className="w-48 p-2 bg-white border-gray-200 z-50">
                                          <div className="flex flex-col gap-2 text-sm">
                                             <div className="font-medium">{timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre'}</div>
-                                            <div className="text-xs text-muted-foreground mb-2">
+                                            <div className="text-xs text-gray-500 mb-2">
                                                {format(timeOff.startDate, "dd MMM")} - {format(timeOff.endDate, "dd MMM")}
                                             </div>
                                             <button
@@ -169,10 +169,10 @@ export function MainCalendarView() {
                                        />
                                     </PopoverTrigger>
                                     {session?.role === 'admin' && (
-                                      <PopoverContent className="w-48 p-2 bg-[#1a1c29] border-border z-50">
+                                      <PopoverContent className="w-48 p-2 bg-white border-gray-200 z-50">
                                          <div className="flex flex-col gap-2 text-sm">
                                             <div className="font-medium">{guard.type}</div>
-                                            <div className="text-xs text-muted-foreground mb-2">
+                                            <div className="text-xs text-gray-500 mb-2">
                                                {format(guard.startDate, "dd MMM")} - {format(guard.endDate, "dd MMM")}
                                             </div>
                                             <button
@@ -193,7 +193,7 @@ export function MainCalendarView() {
                ))}
 
                {members.length === 0 && (
-                  <div className="p-8 text-center text-muted-foreground text-sm flex sticky left-0 w-full justify-center">
+                  <div className="p-8 text-center text-gray-500 text-sm flex sticky left-0 w-full justify-center">
                      No hay miembros en el equipo. Comienza agregando uno en el panel de administración.
                   </div>
                )}
