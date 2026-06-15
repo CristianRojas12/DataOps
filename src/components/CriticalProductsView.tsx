@@ -105,7 +105,7 @@ export function CriticalProductsView() {
                 return (
                   <div
                     key={key}
-                    className="grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-105 hover:ring-2 hover:ring-gray-200"
+                    className="grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-125 hover:ring-2 hover:ring-white/40"
                     style={{ gridTemplateColumns: ROW_GRID, backgroundColor: bg }}
                   >
                     <div className="font-bold text-sm text-gray-900">{task.time}</div>
@@ -128,7 +128,7 @@ export function CriticalProductsView() {
                             <Button
                               key={li}
                               size="sm"
-                              className="h-8 bg-blue-100 hover:bg-blue-200 text-blue-900"
+                              className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-white"
                               onClick={() => copyPbi(link.url, linkKey)}
                             >
                               {copiedKey === linkKey ? "✓ Copiado" : `📊 ${link.label}`}
@@ -140,7 +140,7 @@ export function CriticalProductsView() {
                             key={li}
                             size="sm"
                             variant="secondary"
-                            className="h-8 bg-white border-gray-200 text-gray-900 hover:bg-gray-50"
+                            className="h-8"
                             onClick={() => window.open(link.url, "_blank")}
                           >
                             {link.label}
@@ -170,11 +170,11 @@ export function CriticalProductsView() {
                   {products.map((p) => (
                     <div key={p.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                       <div>
-                        <div className="font-medium text-gray-900">{p.name}</div>
-                        <div className="text-xs text-gray-500">
+                        <div className="font-medium">{p.name}</div>
+                        <div className="text-xs text-muted-foreground">
                           Días: {WEEKDAYS.filter((d) => (p.days ?? []).includes(d.value)).map((d) => d.label).join(" · ") || "Sin días"}
                         </div>
-                        <div className="text-xs text-gray-500">
+                        <div className="text-xs text-muted-foreground">
                           Horarios: {(p.schedules ?? []).join("  ·  ") || "Sin horarios"}
                         </div>
                       </div>

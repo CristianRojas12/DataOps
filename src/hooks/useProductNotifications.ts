@@ -28,13 +28,9 @@ function saveNotified(set: Set<string>): void {
 export function useProductNotifications(products: CriticalProduct[], enabled: boolean, volume = 0.6) {
   const productsRef = useRef(products);
   const enabledRef = useRef(enabled);
+  enabledRef.current = enabled;
   const volumeRef = useRef(volume);
-
-  useEffect(() => {
-    productsRef.current = products;
-    enabledRef.current = enabled;
-    volumeRef.current = volume;
-  }, [products, enabled, volume]);
+  volumeRef.current = volume;
 
   useEffect(() => {
     const check = () => {
