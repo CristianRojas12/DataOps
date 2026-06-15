@@ -72,10 +72,10 @@ export function RequestTimeOffModal() {
           <div className="grid gap-2">
             <label className="text-sm font-medium">Tipo de Permiso</label>
             <Select value={type} onValueChange={(val) => setType(val as TimeOffType)}>
-              <SelectTrigger className="bg-white border-gray-200">
+              <SelectTrigger className="bg-white border border-gray-300 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 font-normal">
                 <SelectValue placeholder="Seleccionar tipo" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-gray-200">
+              <SelectContent className="bg-white border border-gray-300">
                 <SelectItem value="vacaciones">Vacaciones</SelectItem>
                 <SelectItem value="dia_guardia">Días X guardia</SelectItem>
               </SelectContent>
@@ -136,7 +136,7 @@ export function RequestTimeOffModal() {
 
         </div>
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setTimeOffModalOpen(false)} className="border-gray-200 hover:bg-white/5">
+          <Button variant="outline" onClick={() => setTimeOffModalOpen(false)} className="text-gray-900 bg-white border border-gray-300 hover:bg-gray-100">
             Cancelar
           </Button>
           <Button onClick={handleSubmit} className="bg-amber-400 hover:bg-amber-500 text-gray-900" disabled={!startDate || !endDate}>

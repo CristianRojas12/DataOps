@@ -148,7 +148,7 @@ export function CriticalProductsView() {
                         );
                       })}
                       {task.done ? (
-                        <Button size="sm" variant="outline" className="h-8 border-gray-200 text-gray-900 hover:bg-gray-50" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
+                        <Button size="sm" variant="outline" className="h-8 bg-white border border-gray-300 text-gray-900 hover:bg-gray-100" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
                           ↩
                         </Button>
                       ) : (
@@ -179,7 +179,7 @@ export function CriticalProductsView() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" className="h-8 border-gray-200 text-gray-900 hover:bg-gray-50" onClick={() => openEdit(p)}>
+                        <Button size="sm" variant="outline" className="h-8 bg-white border border-gray-300 text-gray-900 hover:bg-gray-100" onClick={() => openEdit(p)}>
                           Editar
                         </Button>
                         <Button size="sm" variant="ghost" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => removeProduct(p.id)}>

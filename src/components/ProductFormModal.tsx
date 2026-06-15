@@ -125,7 +125,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] bg-[#1a1c29] border-border text-foreground max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[560px] bg-white border-gray-200 text-gray-900 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal">
             {product ? "Editar producto crítico" : "Nuevo producto crítico"}
@@ -135,11 +135,11 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
         <div className="space-y-3">
           <div className="space-y-1">
             <Label>Nombre del producto</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-[#13151f] border-border" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-white border-gray-200" />
           </div>
           <div className="space-y-1">
             <Label>Canal de Teams (opcional)</Label>
-            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-[#13151f] border-border" />
+            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-white border-gray-200" />
           </div>
 
           <div className="space-y-1">
@@ -154,18 +154,18 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     value={l.label}
                     onChange={(e) => setLinkAt(i, { label: e.target.value })}
                     placeholder="Nombre (ej: Link 1)"
-                    className="w-36 shrink-0 bg-[#13151f] border-border"
+                    className="w-36 shrink-0 bg-white border-gray-200"
                   />
                   <Input
                     value={l.url}
                     onChange={(e) => setLinkAt(i, { url: e.target.value })}
                     placeholder="https://..."
-                    className="flex-1 bg-[#13151f] border-border"
+                    className="flex-1 bg-white border-gray-200"
                   />
                   <select
                     value={l.kind}
                     onChange={(e) => setLinkAt(i, { kind: e.target.value as ProductLinkKind })}
-                    className="h-9 shrink-0 rounded-md bg-[#13151f] border border-border px-2 text-sm text-foreground"
+                    className="h-9 shrink-0 rounded-md bg-white border border-gray-200 px-2 text-sm text-gray-900"
                   >
                     <option value="databricks">Databricks</option>
                     <option value="powerbi">Power BI</option>
@@ -176,7 +176,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                       onClick={() => moveLink(i, -1)}
                       disabled={i === 0}
                       title="Subir"
-                      className="px-1 text-xs leading-none text-muted-foreground hover:text-white disabled:opacity-30 disabled:hover:text-muted-foreground"
+                      className="px-1 text-xs leading-none text-muted-foreground hover:text-gray-900 disabled:opacity-30 disabled:hover:text-muted-foreground"
                     >
                       ▲
                     </button>
@@ -185,18 +185,18 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                       onClick={() => moveLink(i, 1)}
                       disabled={i === links.length - 1}
                       title="Bajar"
-                      className="px-1 text-xs leading-none text-muted-foreground hover:text-white disabled:opacity-30 disabled:hover:text-muted-foreground"
+                      className="px-1 text-xs leading-none text-muted-foreground hover:text-gray-900 disabled:opacity-30 disabled:hover:text-muted-foreground"
                     >
                       ▼
                     </button>
                   </div>
-                  <Button type="button" variant="ghost" size="icon" onClick={() => removeLinkRow(i)} className="shrink-0 text-red-400 hover:text-red-300 hover:bg-white/5">
+                  <Button type="button" variant="ghost" size="icon" onClick={() => removeLinkRow(i)} className="shrink-0 text-red-400 hover:text-red-300 hover:bg-gray-100">
                     ✕
                   </Button>
                 </div>
               ))}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addLinkRow} className="mt-2 bg-[#13151f] border-border hover:bg-[#1f2233] hover:text-white">
+            <Button type="button" variant="outline" size="sm" onClick={addLinkRow} className="mt-2 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-900">
               + Agregar link
             </Button>
           </div>
@@ -215,7 +215,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     className={`h-9 w-12 rounded-md border text-sm font-medium transition-colors ${
                       active
                         ? "bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700"
-                        : "bg-[#13151f] border-border text-muted-foreground hover:bg-[#1f2233] hover:text-white"
+                        : "bg-white border-gray-200 text-muted-foreground hover:bg-gray-50 hover:text-gray-900"
                     }`}
                   >
                     {d.label}
