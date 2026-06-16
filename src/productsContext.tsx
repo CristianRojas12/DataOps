@@ -18,6 +18,7 @@ interface ProductsContextType {
   products: CriticalProduct[];
   doneKeys: Set<string>; // claves "productId|HH:MM" hechas hoy
   holidayProductsByDay: Record<string, Set<string>>; // "yyyy-MM-dd" -> set de product_id que corren ese feriado
+  notesByKey: Record<string, string>; // "productId|HH:MM" -> anotación permanente del horario
   isLoading: boolean;
   refresh: () => Promise<void>;
   addProduct: (data: CriticalProductInput) => Promise<void>;
@@ -26,6 +27,7 @@ interface ProductsContextType {
   markDone: (productId: string, time: string) => Promise<void>;
   unmarkDone: (productId: string, time: string) => Promise<void>;
   setHolidayProducts: (day: string, productIds: string[]) => Promise<void>;
+  setNote: (productId: string, time: string, note: string) => Promise<void>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -34,13 +36,15 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
   const [products, setProducts] = useState<CriticalProduct[]>([]);
   const [doneKeys, setDoneKeys] = useState<Set<string>>(new Set());
   const [holidayProductsByDay, setHolidayProductsByDay] = useState<Record<string, Set<string>>>({});
+  const [notesByKey, setNotesByKey] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const [prodRes, doneRes, holRes] = await Promise.all([
+    const [prodRes, doneRes, holRes, notesRes] = await Promise.all([
       supabase.from("critical_products").select("*").order("name"),
       supabase.from("product_done").select("product_id, time").eq("day", todayStr()),
       supabase.from("critical_product_holidays").select("product_id, day").gte("day", todayStr()),
+      supabase.from("product_notes").select("product_id, time, note"),
     ]);
 
     if (prodRes.error) console.error("Error fetching critical_products:", prodRes.error);
@@ -64,6 +68,15 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
         (byDay[r.day] ??= new Set()).add(r.product_id);
       }
       setHolidayProductsByDay(byDay);
+    }
+
+    if (notesRes.error) console.error("Error fetching product_notes:", notesRes.error);
+    else {
+      const byKey: Record<string, string> = {};
+      for (const r of (notesRes.data ?? []) as any[]) {
+        if (r.note) byKey[doneKey(r.product_id, r.time)] = r.note;
+      }
+      setNotesByKey(byKey);
     }
   }, []);
 
@@ -131,9 +144,29 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
     await refresh();
   };
 
+  // Anotación permanente por (producto, horario). Upsert; vacío = borra la fila.
+  const setNote = async (productId: string, time: string, note: string) => {
+    const trimmed = note.trim();
+    const key = doneKey(productId, time);
+    setNotesByKey((prev) => {
+      const next = { ...prev };
+      if (trimmed) next[key] = trimmed; else delete next[key];
+      return next;
+    });
+    if (!trimmed) {
+      const { error } = await supabase.from("product_notes").delete().eq("product_id", productId).eq("time", time);
+      if (error) console.error("Error deleting note", error);
+    } else {
+      const { error } = await supabase
+        .from("product_notes")
+        .upsert({ product_id: productId, time, note: trimmed }, { onConflict: "product_id,time" });
+      if (error) console.error("Error saving note", error);
+    }
+  };
+
   return (
     <ProductsContext.Provider
-      value={{ products, doneKeys, holidayProductsByDay, isLoading, refresh, addProduct, updateProduct, removeProduct, markDone, unmarkDone, setHolidayProducts }}
+      value={{ products, doneKeys, holidayProductsByDay, notesByKey, isLoading, refresh, addProduct, updateProduct, removeProduct, markDone, unmarkDone, setHolidayProducts, setNote }}
     >
       {children}
     </ProductsContext.Provider>

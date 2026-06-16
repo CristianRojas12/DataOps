@@ -114,9 +114,19 @@ CREATE TABLE IF NOT EXISTS public.critical_product_holidays (
     UNIQUE (product_id, day)
 );
 
+-- Anotaciones permanentes por horario. Una fila por (producto, horario), compartida.
+CREATE TABLE IF NOT EXISTS public.product_notes (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    product_id uuid NOT NULL REFERENCES public.critical_products(id) ON DELETE CASCADE,
+    time text NOT NULL,
+    note text NOT NULL DEFAULT '',
+    UNIQUE (product_id, time)
+);
+
 ALTER TABLE public.critical_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.product_done ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.critical_product_holidays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.product_notes ENABLE ROW LEVEL SECURITY;
 
 -- Políticas públicas (sin login), igual que members/guards. UPDATE incluido para editar.
 CREATE POLICY "Public select critical_products" ON public.critical_products FOR SELECT USING (true);
@@ -131,6 +141,11 @@ CREATE POLICY "Public delete product_done" ON public.product_done FOR DELETE USI
 CREATE POLICY "Public select critical_product_holidays" ON public.critical_product_holidays FOR SELECT USING (true);
 CREATE POLICY "Public insert critical_product_holidays" ON public.critical_product_holidays FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public delete critical_product_holidays" ON public.critical_product_holidays FOR DELETE USING (true);
+
+CREATE POLICY "Public select product_notes" ON public.product_notes FOR SELECT USING (true);
+CREATE POLICY "Public insert product_notes" ON public.product_notes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public update product_notes" ON public.product_notes FOR UPDATE USING (true) WITH CHECK (true);
+CREATE POLICY "Public delete product_notes" ON public.product_notes FOR DELETE USING (true);
 
 -- Política de retención: borra las marcas "Listo" con más de 7 días.
 -- Corre a diario vía pg_cron (03:00 UTC ≈ 00:00 ART). El autovacuum recupera
