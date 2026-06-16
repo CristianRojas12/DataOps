@@ -123,7 +123,7 @@ export function AssignGuardModal() {
           <span className="text-lg leading-none mb-[2px]">+</span> Asignar Guardias
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px] bg-white border-gray-200 text-gray-900">
+      <DialogContent className="sm:max-w-[425px] bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal">
             Asignar Guardias
@@ -143,11 +143,11 @@ export function AssignGuardModal() {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-white border-gray-200">
+                        <SelectTrigger className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
                           <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white border-gray-200">
+                      <SelectContent className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
                         {members.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             {m.name}
@@ -171,11 +171,11 @@ export function AssignGuardModal() {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-white border-gray-200">
+                        <SelectTrigger className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
                           <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white border-gray-200">
+                      <SelectContent className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
                         <SelectItem value="Guardia Matutina">
                           Guardia Matutina
                         </SelectItem>
@@ -202,8 +202,8 @@ export function AssignGuardModal() {
                         <Button
                           variant={"outline"}
                           className={cn(
-                            "w-full justify-start text-left font-normal bg-white border-gray-200 hover:bg-gray-50",
-                            !field.value?.from && "text-gray-500"
+                            "w-full justify-start text-left font-normal bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1f2233]",
+                            !field.value?.from ? "text-gray-500 dark:text-gray-400" : "dark:text-gray-100"
                           )}
                         >
                           <CalendarIcon className="mr-2 h-4 w-4" />
@@ -222,7 +222,7 @@ export function AssignGuardModal() {
                         </Button>
                       </FormControl>
                     </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0 bg-white border-gray-200" align="start">
+                    <PopoverContent className="w-auto p-0 bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800" align="start">
                       <Calendar
                         mode="range"
                         defaultMonth={field.value?.from}
@@ -249,7 +249,7 @@ export function AssignGuardModal() {
                 type="button"
                 variant="ghost"
                 onClick={() => setOpen(false)}
-                className="text-gray-900 hover:bg-white/10"
+                className="text-gray-900 dark:text-gray-100 hover:bg-gray-50 dark:hover:bg-[#1f2233]"
               >
                 Cancelar
               </Button>
