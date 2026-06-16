@@ -12,6 +12,32 @@ export function LoginView() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isResetting, setIsResetting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+
+  const handleResetPassword = async () => {
+    if (!email.trim()) {
+      setError("Por favor, ingresa tu correo electrónico primero para recuperar la contraseña.");
+      return;
+    }
+
+    setIsResetting(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: window.location.origin,
+    });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccessMessage("Te hemos enviado un correo con las instrucciones para restablecer tu contraseña.");
+    }
+
+    setIsResetting(false);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -66,9 +92,17 @@ export function LoginView() {
                   required
                   className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 h-12"
                 />
+                <div className="flex justify-end pt-1">
+                  <button type="button" onClick={handleResetPassword} disabled={isResetting} className="text-sm text-gray-600 hover:text-black hover:underline cursor-pointer dark:text-gray-400 dark:hover:text-white">
+                    Olvidé mi contraseña
+                  </button>
+                </div>
               </div>
               {error && (
                 <div className="text-sm text-red-500 font-medium">{error}</div>
+              )}
+              {successMessage && (
+                <div className="text-sm text-green-600 font-medium">{successMessage}</div>
               )}
               <div className="flex justify-end pt-2">
                  <Button
