@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 
 import { useProductsContext } from "../productsContext";
 import { useProductNotifications } from "../hooks/useProductNotifications";
 import type { CriticalProduct, ProductTask } from "../productsTypes";
 import { WEEKDAYS, DEFAULT_SHIFT, SHIFTS } from "../productsTypes";
 import { ProductFormModal } from "./ProductFormModal";
+import { HolidayScheduleModal } from "./HolidayScheduleModal";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { useGuardContext } from "../context";
@@ -17,14 +19,15 @@ function hm(d: Date): string {
 const ROW_GRID = "60px 150px minmax(240px,1fr) 100px minmax(380px,1.6fr)";
 
 export function CriticalProductsView() {
-  const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
-  const { session } = useGuardContext();
+  const { products, doneKeys, holidayProductsByDay, isLoading, markDone, unmarkDone, removeProduct, setHolidayProducts } = useProductsContext();
+  const { session, calendarDim } = useGuardContext();
   const isAdmin = session?.role === 'admin';
   const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen, productsShiftFilter } = useUiStore();
 
   const [now, setNow] = useState(new Date());
   const [editing, setEditing] = useState<CriticalProduct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [holidayModal, setHolidayModal] = useState<{ day: string; name: string } | null>(null);
 
   // Reloj para recalcular estados (próximo/pendiente) y reflejar la hora.
   useEffect(() => {
@@ -40,16 +43,41 @@ export function CriticalProductsView() {
   }, []);
 
   const todayDow = now.getDay(); // 0=Dom … 6=Sáb
+  const todayKey = format(now, "yyyy-MM-dd");
 
-  // Productos que aplican hoy y a la guardia filtrada (null/"all" = sin filtro de guardia).
+  // ¿Hoy es feriado y está configurado (≥1 producto programado)? dim_calendario es la fuente.
+  const todayIsHoliday = calendarDim.some((r) => r.date_key === todayKey && r.is_holiday);
+  const todayIsConfiguredHoliday = todayIsHoliday && (holidayProductsByDay[todayKey]?.size ?? 0) > 0;
+
+  // Feriados en las próximas 48hs (hoy / +1d / +2d) para el banner de admin.
+  const upcomingHolidays = useMemo(() => {
+    if (!isAdmin) return [] as { day: string; name: string }[];
+    const out: { day: string; name: string }[] = [];
+    for (let offset = 0; offset <= 2; offset++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + offset);
+      const key = format(d, "yyyy-MM-dd");
+      const row = calendarDim.find((r) => r.date_key === key && r.is_holiday);
+      if (row) out.push({ day: key, name: row.holiday_name ?? "Feriado" });
+    }
+    return out;
+  }, [isAdmin, calendarDim, now]);
+
+  // Productos visibles hoy. En feriado configurado se muestran solo los programados (en vez del
+  // filtro por día de semana); la guardia sigue aplicando en ambos casos.
   const visibleProducts = useMemo(() => {
+    const holidaySet = todayIsConfiguredHoliday ? holidayProductsByDay[todayKey] : null;
     return products.filter((p) => {
       if (!p.enabled) return false;
-      if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) return false; // no ejecuta hoy
+      if (holidaySet) {
+        if (!holidaySet.has(p.id)) return false; // feriado configurado: solo lo programado
+      } else if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) {
+        return false; // día normal: no ejecuta hoy
+      }
       if (productsShiftFilter && productsShiftFilter !== "all" && (p.shift ?? DEFAULT_SHIFT) !== productsShiftFilter) return false;
       return true;
     });
-  }, [products, todayDow, productsShiftFilter]);
+  }, [products, todayDow, productsShiftFilter, todayIsConfiguredHoliday, holidayProductsByDay, todayKey]);
 
   // Las alertas (notificación + tilín) respetan el filtro: solo avisan de lo visible.
   useProductNotifications(visibleProducts, productsAlertsEnabled, productsAlertVolume);
@@ -88,6 +116,33 @@ export function CriticalProductsView() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-12">
+        {/* Aviso: hoy es un feriado configurado, se muestra solo lo programado. */}
+        {todayIsConfiguredHoliday && (
+          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            🎉 Hoy es feriado — mostrando solo los productos programados para hoy.
+          </div>
+        )}
+
+        {/* Banner de admin: feriados próximos (48hs) a configurar. */}
+        {upcomingHolidays.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {upcomingHolidays.map((h) => {
+              const count = holidayProductsByDay[h.day]?.size ?? 0;
+              return (
+                <div key={h.day} className="flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+                  <div className="text-sm text-amber-900">
+                    <span className="font-medium">Feriado próximo:</span> {h.name} ({h.day}).{" "}
+                    {count > 0 ? `${count} producto(s) programado(s).` : "Sin productos programados aún."}
+                  </div>
+                  <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={() => setHolidayModal(h)}>
+                    Programar feriado
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {tasks.length === 0 ? (
           <p className="text-gray-500 text-center py-16">
             No hay productos configurados. Hacé clic en "+ Agregar producto".
@@ -217,6 +272,18 @@ export function CriticalProductsView() {
         onOpenChange={(v) => { setProductsAddModalOpen(v); if (!v) setEditing(null); }}
         product={editing}
       />
+
+      {holidayModal && (
+        <HolidayScheduleModal
+          open={!!holidayModal}
+          onOpenChange={(v) => { if (!v) setHolidayModal(null); }}
+          day={holidayModal.day}
+          holidayName={holidayModal.name}
+          products={products}
+          selectedIds={holidayProductsByDay[holidayModal.day] ?? new Set()}
+          onSave={(ids) => setHolidayProducts(holidayModal.day, ids)}
+        />
+      )}
     </div>
   );
 }

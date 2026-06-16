@@ -104,8 +104,19 @@ CREATE TABLE IF NOT EXISTS public.product_done (
     UNIQUE (product_id, time, day)
 );
 
+-- Programación de feriados: qué productos críticos ejecutan en una fecha de feriado
+-- puntual. Una fila por (producto, fecha). dim_calendario sigue siendo la fuente de
+-- qué fechas son feriado; esta tabla solo cruza producto ↔ fecha.
+CREATE TABLE IF NOT EXISTS public.critical_product_holidays (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    product_id uuid NOT NULL REFERENCES public.critical_products(id) ON DELETE CASCADE,
+    day date NOT NULL,
+    UNIQUE (product_id, day)
+);
+
 ALTER TABLE public.critical_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.product_done ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.critical_product_holidays ENABLE ROW LEVEL SECURITY;
 
 -- Políticas públicas (sin login), igual que members/guards. UPDATE incluido para editar.
 CREATE POLICY "Public select critical_products" ON public.critical_products FOR SELECT USING (true);
@@ -116,6 +127,10 @@ CREATE POLICY "Public delete critical_products" ON public.critical_products FOR 
 CREATE POLICY "Public select product_done" ON public.product_done FOR SELECT USING (true);
 CREATE POLICY "Public insert product_done" ON public.product_done FOR INSERT WITH CHECK (true);
 CREATE POLICY "Public delete product_done" ON public.product_done FOR DELETE USING (true);
+
+CREATE POLICY "Public select critical_product_holidays" ON public.critical_product_holidays FOR SELECT USING (true);
+CREATE POLICY "Public insert critical_product_holidays" ON public.critical_product_holidays FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public delete critical_product_holidays" ON public.critical_product_holidays FOR DELETE USING (true);
 
 -- Política de retención: borra las marcas "Listo" con más de 7 días.
 -- Corre a diario vía pg_cron (03:00 UTC ≈ 00:00 ART). El autovacuum recupera
