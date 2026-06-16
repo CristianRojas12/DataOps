@@ -1,4 +1,5 @@
 // Productos críticos (pestaña de monitoreo). Espeja la tabla critical_products.
+import type { GuardType } from "./types";
 
 // Tipo de link: define el comportamiento del botón.
 //  - "databricks": abre la URL en una pestaña nueva (botón gris).
@@ -18,8 +19,17 @@ export interface CriticalProduct {
   teams_channel: string;
   schedules: string[]; // horarios "HH:MM"
   days: number[]; // días que ejecuta (0=Dom … 6=Sáb). Default Lun-Vie [1,2,3,4,5]
+  shift: GuardType; // guardia a la que pertenece. Default "Guardia Matutina"
   enabled: boolean;
 }
+
+// Guardias disponibles para el selector del formulario y el filtro de la vista.
+export const SHIFTS: ReadonlyArray<{ value: GuardType; label: string }> = [
+  { value: "Guardia Matutina", label: "Matutina" },
+  { value: "Guardia Vespertina", label: "Vespertina" },
+];
+
+export const DEFAULT_SHIFT: GuardType = "Guardia Matutina";
 
 // Días de la semana en orden Lun→Dom para los botones del formulario.
 export const WEEKDAYS: ReadonlyArray<{ value: number; label: string }> = [

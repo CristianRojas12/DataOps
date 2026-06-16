@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useProductsContext } from "../productsContext";
 import { useProductNotifications } from "../hooks/useProductNotifications";
 import type { CriticalProduct, ProductTask } from "../productsTypes";
-import { WEEKDAYS } from "../productsTypes";
+import { WEEKDAYS, DEFAULT_SHIFT, SHIFTS } from "../productsTypes";
 import { ProductFormModal } from "./ProductFormModal";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Button } from "@/components/ui/button";
@@ -20,7 +20,7 @@ export function CriticalProductsView() {
   const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
   const { session } = useGuardContext();
   const isAdmin = session?.role === 'admin';
-  const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen } = useUiStore();
+  const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen, productsShiftFilter } = useUiStore();
 
   const [now, setNow] = useState(new Date());
   const [editing, setEditing] = useState<CriticalProduct | null>(null);
@@ -39,21 +39,30 @@ export function CriticalProductsView() {
     }
   }, []);
 
-  useProductNotifications(products, productsAlertsEnabled, productsAlertVolume);
-
   const todayDow = now.getDay(); // 0=Dom … 6=Sáb
+
+  // Productos que aplican hoy y a la guardia filtrada (null/"all" = sin filtro de guardia).
+  const visibleProducts = useMemo(() => {
+    return products.filter((p) => {
+      if (!p.enabled) return false;
+      if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) return false; // no ejecuta hoy
+      if (productsShiftFilter && productsShiftFilter !== "all" && (p.shift ?? DEFAULT_SHIFT) !== productsShiftFilter) return false;
+      return true;
+    });
+  }, [products, todayDow, productsShiftFilter]);
+
+  // Las alertas (notificación + tilín) respetan el filtro: solo avisan de lo visible.
+  useProductNotifications(visibleProducts, productsAlertsEnabled, productsAlertVolume);
 
   const tasks = useMemo<ProductTask[]>(() => {
     const list: ProductTask[] = [];
-    for (const p of products) {
-      if (!p.enabled) continue;
-      if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) continue; // no ejecuta hoy
+    for (const p of visibleProducts) {
       for (const t of p.schedules ?? []) {
         list.push({ product: p, time: t, done: doneKeys.has(`${p.id}|${t}`) });
       }
     }
     return list.sort((a, b) => a.time.localeCompare(b.time));
-  }, [products, doneKeys, todayDow]);
+  }, [visibleProducts, doneKeys]);
 
   const cur = hm(now);
 
@@ -170,7 +179,15 @@ export function CriticalProductsView() {
                   {products.map((p) => (
                     <div key={p.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                       <div>
-                        <div className="font-medium">{p.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{p.name}</span>
+                          <span
+                            className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full text-white"
+                            style={{ backgroundColor: (p.shift ?? DEFAULT_SHIFT) === "Guardia Vespertina" ? "#A855F7" : "#F97316" }}
+                          >
+                            {SHIFTS.find((s) => s.value === (p.shift ?? DEFAULT_SHIFT))?.label ?? "Matutina"}
+                          </span>
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           Días: {WEEKDAYS.filter((d) => (p.days ?? []).includes(d.value)).map((d) => d.label).join(" · ") || "Sin días"}
                         </div>
