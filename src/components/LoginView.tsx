@@ -27,7 +27,7 @@ export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: 
     setError(null);
     setSuccessMessage(null);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://cristianrojas12.github.io/DataOps/' });
 
     if (error) {
       setError(error.message);
