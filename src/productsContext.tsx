@@ -46,6 +46,7 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
           ...p,
           links: Array.isArray(p.links) ? p.links : [],
           days: Array.isArray(p.days) ? p.days : [1, 2, 3, 4, 5],
+          shift: p.shift === "Guardia Vespertina" ? "Guardia Vespertina" : "Guardia Matutina",
         })) as CriticalProduct[],
       );
 

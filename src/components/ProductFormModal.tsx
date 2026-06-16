@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 
 import { useProductsContext } from "../productsContext";
 import type { CriticalProduct, ProductLink, ProductLinkKind } from "../productsTypes";
-import { WEEKDAYS, DEFAULT_DAYS } from "../productsTypes";
+import { WEEKDAYS, DEFAULT_DAYS, SHIFTS, DEFAULT_SHIFT } from "../productsTypes";
+import type { GuardType } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,6 +44,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
 
   const [name, setName] = useState("");
   const [teams, setTeams] = useState("");
+  const [shift, setShift] = useState<GuardType>(DEFAULT_SHIFT);
   const [links, setLinks] = useState<ProductLink[]>([emptyLink("Link 1")]);
   const [days, setDays] = useState<number[]>(DEFAULT_DAYS);
   const [schedules, setSchedules] = useState<string[]>([""]);
@@ -55,6 +57,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
     setError("");
     setName(product?.name ?? "");
     setTeams(product?.teams_channel ?? "");
+    setShift(product?.shift ?? DEFAULT_SHIFT);
     setLinks(product?.links?.length ? product.links.map((l) => ({ ...l })) : [emptyLink("Link 1")]);
     setDays(product?.days?.length ? [...product.days] : DEFAULT_DAYS);
     setSchedules(product?.schedules?.length ? [...product.schedules] : [""]);
@@ -108,6 +111,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
       teams_channel: teams.trim(),
       schedules: norm.value,
       days: [...days].sort((a, b) => a - b),
+      shift,
       enabled: true,
     };
 
@@ -140,6 +144,19 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
           <div className="space-y-1">
             <Label>Canal de Teams (opcional)</Label>
             <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-white border-gray-200" />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Guardia</Label>
+            <select
+              value={shift}
+              onChange={(e) => setShift(e.target.value as GuardType)}
+              className="h-9 w-full rounded-md bg-white border border-gray-200 px-2 text-sm text-gray-900"
+            >
+              {SHIFTS.map((s) => (
+                <option key={s.value} value={s.value}>{s.label}</option>
+              ))}
+            </select>
           </div>
 
           <div className="space-y-1">

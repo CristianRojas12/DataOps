@@ -1,4 +1,9 @@
 import { create } from 'zustand';
+import type { GuardType } from './types';
+
+// Filtro de guardia para la vista de productos críticos.
+// null = sin decidir (CriticalProductsControls lo auto-detecta según tu guardia de hoy).
+export type ProductsShiftFilter = GuardType | "all" | null;
 
 interface CalendarDay {
   date_key: string;
@@ -19,6 +24,8 @@ interface UiState {
   setProductsAlertVolume: (volume: number) => void;
   productsAddModalOpen: boolean;
   setProductsAddModalOpen: (open: boolean) => void;
+  productsShiftFilter: ProductsShiftFilter;
+  setProductsShiftFilter: (filter: ProductsShiftFilter) => void;
 
   // Time Off Request Modal state
   timeOffModalOpen: boolean;
@@ -42,6 +49,8 @@ export const useUiStore = create<UiState>((set) => ({
   },
   productsAddModalOpen: false,
   setProductsAddModalOpen: (open) => set({ productsAddModalOpen: open }),
+  productsShiftFilter: null,
+  setProductsShiftFilter: (filter) => set({ productsShiftFilter: filter }),
 
   timeOffModalOpen: false,
   setTimeOffModalOpen: (open) => set({ timeOffModalOpen: open }),

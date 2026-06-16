@@ -63,6 +63,9 @@ CREATE TABLE IF NOT EXISTS public.critical_products (
     schedules text[] NOT NULL DEFAULT '{}',
     -- Días que ejecuta (0=Dom … 6=Sáb). Default Lunes a Viernes.
     days int[] NOT NULL DEFAULT '{1,2,3,4,5}',
+    -- Guardia a la que pertenece (mismos valores que guards.type). Default Matutina.
+    shift text NOT NULL DEFAULT 'Guardia Matutina'
+        CHECK (shift IN ('Guardia Matutina', 'Guardia Vespertina')),
     enabled boolean NOT NULL DEFAULT true
 );
 
@@ -72,6 +75,8 @@ ALTER TABLE public.critical_products
     ADD COLUMN IF NOT EXISTS links jsonb NOT NULL DEFAULT '[]'::jsonb;
 ALTER TABLE public.critical_products
     ADD COLUMN IF NOT EXISTS days int[] NOT NULL DEFAULT '{1,2,3,4,5}';
+ALTER TABLE public.critical_products
+    ADD COLUMN IF NOT EXISTS shift text NOT NULL DEFAULT 'Guardia Matutina';
 ALTER TABLE public.critical_products ALTER COLUMN url DROP NOT NULL;
 
 UPDATE public.critical_products p
