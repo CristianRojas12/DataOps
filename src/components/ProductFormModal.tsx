@@ -129,7 +129,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[560px] bg-white border-gray-200 text-gray-900 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[560px] bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal">
             {product ? "Editar producto crítico" : "Nuevo producto crítico"}
@@ -139,11 +139,11 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
         <div className="space-y-3">
           <div className="space-y-1">
             <Label>Nombre del producto</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-white border-gray-200" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800" />
           </div>
           <div className="space-y-1">
             <Label>Canal de Teams (opcional)</Label>
-            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-white border-gray-200" />
+            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800" />
           </div>
 
           <div className="space-y-1">
@@ -171,18 +171,18 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     value={l.label}
                     onChange={(e) => setLinkAt(i, { label: e.target.value })}
                     placeholder="Nombre (ej: Link 1)"
-                    className="w-36 shrink-0 bg-white border-gray-200"
+                    className="w-36 shrink-0 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800"
                   />
                   <Input
                     value={l.url}
                     onChange={(e) => setLinkAt(i, { url: e.target.value })}
                     placeholder="https://..."
-                    className="flex-1 bg-white border-gray-200"
+                    className="flex-1 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800"
                   />
                   <select
                     value={l.kind}
                     onChange={(e) => setLinkAt(i, { kind: e.target.value as ProductLinkKind })}
-                    className="h-9 shrink-0 rounded-md bg-white border border-gray-200 px-2 text-sm text-gray-900"
+                    className="h-9 shrink-0 rounded-md bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 px-2 text-sm text-gray-900 dark:text-gray-100"
                   >
                     <option value="databricks">Databricks</option>
                     <option value="powerbi">Power BI</option>
@@ -213,7 +213,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                 </div>
               ))}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addLinkRow} className="mt-2 bg-white border-gray-200 hover:bg-gray-50 hover:text-gray-900">
+            <Button type="button" variant="outline" size="sm" onClick={addLinkRow} className="mt-2 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1f2233] hover:text-gray-900 dark:hover:text-gray-100">
               + Agregar link
             </Button>
           </div>
@@ -232,7 +232,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     className={`h-9 w-12 rounded-md border text-sm font-medium transition-colors ${
                       active
                         ? "bg-indigo-600 border-indigo-500 text-white hover:bg-indigo-700"
-                        : "bg-white border-gray-200 text-muted-foreground hover:bg-gray-50 hover:text-gray-900"
+                        : "bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 text-muted-foreground hover:bg-gray-50 dark:hover:bg-[#1f2233] hover:text-gray-900 dark:hover:text-gray-100"
                     }`}
                   >
                     {d.label}
@@ -251,7 +251,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     value={s}
                     onChange={(e) => setSchedAt(i, e.target.value)}
                     placeholder="06:00"
-                    className="w-32 bg-white border-gray-200"
+                    className="w-32 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800"
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeSchedRow(i)} className="text-red-500 hover:text-red-600 hover:bg-gray-100">
                     ✕
@@ -259,7 +259,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                 </div>
               ))}
             </div>
-            <Button type="button" variant="outline" size="sm" onClick={addSchedRow} className="mt-2 bg-white border-gray-200 hover:bg-gray-100 hover:text-gray-900">
+            <Button type="button" variant="outline" size="sm" onClick={addSchedRow} className="mt-2 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-[#1f2233] hover:text-gray-900 dark:hover:text-gray-100">
               + Agregar horario
             </Button>
           </div>
@@ -268,7 +268,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
         </div>
 
         <div className="flex justify-between pt-2">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-gray-900 hover:bg-gray-100">
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#1f2233]">
             Cancelar
           </Button>
           <Button type="button" onClick={handleSave} disabled={saving} className="bg-amber-400 hover:bg-amber-500 text-gray-900">

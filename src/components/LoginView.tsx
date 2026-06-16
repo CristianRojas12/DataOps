@@ -30,7 +30,7 @@ export function LoginView() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen w-full bg-white font-sans relative">
+    <div className="flex flex-col min-h-screen w-full bg-white dark:bg-[#0f111a] font-sans relative">
       {/* Background Block */}
       <div className="absolute top-0 left-0 w-full h-[55%] bg-[#FFE500]" />
 
@@ -41,7 +41,7 @@ export function LoginView() {
            <h2 className="text-2xl font-medium text-black">Iniciá sesión</h2>
         </div>
 
-        <Card className="w-full max-w-md bg-white border-gray-200 text-gray-900 shadow-md">
+        <Card className="w-full max-w-md bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 shadow-md">
           <CardContent className="pt-6">
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
@@ -53,7 +53,7 @@ export function LoginView() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="bg-white border-gray-200 h-12"
+                  className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 h-12"
                 />
               </div>
               <div className="space-y-2">
@@ -64,7 +64,7 @@ export function LoginView() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  className="bg-white border-gray-200 h-12"
+                  className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 h-12"
                 />
               </div>
               {error && (
@@ -89,23 +89,23 @@ export function LoginView() {
 
       {/* Help Footer */}
       <div className="w-full max-w-2xl mx-auto p-4 mb-8 relative z-10">
-         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+         <div className="bg-white dark:bg-[#1a1c29] border border-gray-200 dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
             <button
                onClick={() => setHelpOpen(!helpOpen)}
-               className="w-full flex items-center justify-between p-4 hover:bg-gray-50 transition-colors"
+               className="w-full flex items-center justify-between p-4 hover:bg-gray-50 dark:hover:bg-[#1f2233] transition-colors"
             >
                <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-full bg-yellow-400 flex items-center justify-center text-black">
                      <Headphones className="w-4 h-4" />
                   </div>
-                  <span className="font-semibold text-sm text-gray-900">Ayuda</span>
+                  <span className="font-semibold text-sm text-gray-900 dark:text-gray-100">Ayuda</span>
                </div>
-               {helpOpen ? <ChevronUp className="w-5 h-5 text-gray-900" /> : <ChevronDown className="w-5 h-5 text-gray-900" />}
+               {helpOpen ? <ChevronUp className="w-5 h-5 text-gray-900" /> : <ChevronDown className="w-5 h-5 text-gray-900 dark:text-gray-100" />}
             </button>
             {helpOpen && (
-               <div className="p-4 pt-0 text-sm border-t border-gray-100">
+               <div className="p-4 pt-0 text-sm border-t border-gray-100 dark:border-gray-800">
                   <p className="font-semibold mb-1">¿Necesitas ayuda? Ponete en contacto con el Equipo de DataOps</p>
-                  <a href="mailto:DataOpsTeam@ab-inbev.com" className="text-gray-600 hover:underline">DataOpsTeam@ab-inbev.com</a>
+                  <a href="mailto:DataOpsTeam@ab-inbev.com" className="text-gray-600 dark:text-gray-400 hover:underline">DataOpsTeam@ab-inbev.com</a>
                </div>
             )}
          </div>

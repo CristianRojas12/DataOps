@@ -1,4 +1,5 @@
-import { Suspense, Component, type ReactNode } from "react";
+import { Suspense, Component, useEffect, type ReactNode } from "react";
+import { useUiStore } from "./store";
 import { GuardProvider } from "./context";
 import { CriticalProductsProvider } from "./productsContext";
 import { MainLayout } from "./components/MainLayout";
@@ -36,6 +37,16 @@ const AppLoader = () => (
 );
 
 function App() {
+  const theme = useUiStore((state) => state.theme);
+
+  useEffect(() => {
+    if (theme === "dark") {
+      document.documentElement.classList.add("dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+    }
+  }, [theme]);
+
   return (
     <ErrorBoundary>
       <Suspense fallback={<AppLoader />}>
