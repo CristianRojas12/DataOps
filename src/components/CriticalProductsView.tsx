@@ -16,10 +16,31 @@ function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const ROW_GRID = "60px 150px minmax(240px,1fr) 100px minmax(380px,1.6fr)";
+// Hora · Producto · Canal Teams (más angosto) · Notas · Estado · Acciones
+const ROW_GRID = "60px 150px minmax(150px,0.7fr) minmax(200px,1fr) 100px minmax(360px,1.4fr)";
+
+// Celda de anotación permanente por horario. Estado local para no perder lo que se
+// está tipeando cuando el poll/reloj re-renderiza; sincroniza desde el server solo
+// cuando el campo no está enfocado. Guarda en blur si cambió.
+function NoteCell({ value, onSave }: { value: string; onSave: (note: string) => void }) {
+  const [text, setText] = useState(value);
+  const [focused, setFocused] = useState(false);
+  useEffect(() => { if (!focused) setText(value); }, [value, focused]);
+  return (
+    <input
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => { setFocused(false); if (text !== value) onSave(text); }}
+      placeholder="Agregar nota…"
+      title={text || "Agregar nota"}
+      className="w-full h-8 rounded-md bg-white/70 border border-gray-200 px-2 text-xs text-gray-900 placeholder:text-gray-400 dark:bg-[#13151f]/70 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500"
+    />
+  );
+}
 
 export function CriticalProductsView() {
-  const { products, doneKeys, holidayProductsByDay, isLoading, markDone, unmarkDone, removeProduct, setHolidayProducts } = useProductsContext();
+  const { products, doneKeys, holidayProductsByDay, notesByKey, isLoading, markDone, unmarkDone, removeProduct, setHolidayProducts, setNote } = useProductsContext();
   const { session, calendarDim } = useGuardContext();
   const isAdmin = session?.role === 'admin';
   const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen, productsShiftFilter } = useUiStore();
@@ -157,6 +178,7 @@ export function CriticalProductsView() {
               <div>Hora</div>
               <div>Producto</div>
               <div>Canal Teams</div>
+              <div>Notas</div>
               <div>Estado</div>
               <div className="text-right">Acciones</div>
             </div>
@@ -175,6 +197,9 @@ export function CriticalProductsView() {
                     <div className="font-bold text-sm text-gray-900 dark:text-gray-100">{task.time}</div>
                     <div className="text-sm text-gray-900 dark:text-gray-100">{task.product.name}</div>
                     <div className="text-xs text-blue-600 dark:text-blue-400">{task.product.teams_channel || "—"}</div>
+                    <div>
+                      <NoteCell value={notesByKey[key] ?? ""} onSave={(v) => setNote(task.product.id, task.time, v)} />
+                    </div>
                     <div className="text-xs font-medium">
                       {task.done ? (
                         <span className="text-emerald-700">✓ Listo</span>
