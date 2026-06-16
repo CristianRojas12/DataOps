@@ -6,7 +6,7 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Headphones, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 
-export function LoginView() {
+export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: { recoveryMode?: boolean; setRecoveryMode?: (v: boolean) => void }) {
   const [helpOpen, setHelpOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,6 +14,7 @@ export function LoginView() {
   const [error, setError] = useState<string | null>(null);
   const [isResetting, setIsResetting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [newPassword, setNewPassword] = useState("");
 
 
   const handleResetPassword = async () => {
@@ -26,9 +27,7 @@ export function LoginView() {
     setError(null);
     setSuccessMessage(null);
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: window.location.origin,
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
 
     if (error) {
       setError(error.message);
@@ -37,6 +36,31 @@ export function LoginView() {
     }
 
     setIsResetting(false);
+  };
+
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPassword.trim()) {
+      setError("Por favor, ingresa una nueva contraseña.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      setError(error.message);
+    } else {
+      setSuccessMessage("¡Contraseña actualizada exitosamente!");
+      setTimeout(() => {
+        setRecoveryMode(false);
+      }, 2000);
+    }
+    setLoading(false);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -64,11 +88,44 @@ export function LoginView() {
         {/* Logo/Header AB InBev style */}
         <div className="mb-10 text-center space-y-6">
            <h1 className="text-5xl font-black tracking-tight text-black">DataOps</h1>
-           <h2 className="text-2xl font-medium text-black">Iniciá sesión</h2>
+           <h2 className="text-2xl font-medium text-black">{recoveryMode ? "Actualiza tu contraseña" : "Iniciá sesión"}</h2>
         </div>
 
         <Card className="w-full max-w-md bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 shadow-md">
           <CardContent className="pt-6">
+            {recoveryMode ? (
+              <form onSubmit={handleUpdatePassword} className="space-y-6">
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword" className="font-semibold text-xs">Nueva Contraseña</Label>
+                  <Input
+                    id="newPassword"
+                    type="password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    required
+                    className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 h-12"
+                  />
+                </div>
+                {error && (
+                  <div className="text-sm text-red-500 font-medium">{error}</div>
+                )}
+                {successMessage && (
+                  <div className="text-sm text-green-600 font-medium">{successMessage}</div>
+                )}
+                <div className="flex justify-end pt-2">
+                   <Button
+                     type="submit"
+                     className="bg-black hover:bg-gray-900 text-white rounded-full pl-6 pr-2 h-12 w-auto font-semibold flex items-center gap-4"
+                     disabled={loading}
+                   >
+                     <span>{loading ? "Actualizando..." : "Actualizar"}</span>
+                     <div className="w-8 h-8 rounded-full bg-[#FFE500] flex items-center justify-center">
+                       <ArrowRight className="w-5 h-5 text-black" />
+                     </div>
+                   </Button>
+                </div>
+              </form>
+            ) : (
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="font-semibold text-xs">Correo electrónico</Label>
@@ -117,6 +174,7 @@ export function LoginView() {
                  </Button>
               </div>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>
