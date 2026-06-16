@@ -29,7 +29,7 @@ export function RequestsView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 text-gray-900 p-6 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0f111a] text-gray-900 dark:text-gray-100 p-6 overflow-hidden">
       <h2 className="text-xl font-medium mb-6 shrink-0">
         {isAdmin ? "Bandeja de Solicitudes" : "Mis Solicitudes"}
       </h2>
@@ -40,20 +40,20 @@ export function RequestsView() {
              const member = members.find(m => m.id === req.memberId);
 
              return (
-               <div key={req.id} className="bg-white border border-gray-200 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+               <div key={req.id} className="bg-white dark:bg-[#1a1c29] border border-gray-200 dark:border-gray-800 rounded-lg p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
                  <div className="space-y-1">
                     <div className="flex items-center gap-2">
-                       <span className="font-medium text-gray-900">{member?.name}</span>
+                       <span className="font-medium text-gray-900 dark:text-gray-100">{member?.name}</span>
                        <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300">
                           {req.type === 'vacaciones' ? 'Vacaciones' : 'Días x Guardia'}
                        </span>
                     </div>
-                    <div className="text-sm text-gray-500 flex gap-4">
+                    <div className="text-sm text-gray-500 dark:text-gray-400 flex gap-4">
                        <span>Del: {format(req.startDate, 'dd/MM/yyyy')}</span>
                        <span>Al: {format(req.endDate, 'dd/MM/yyyy')}</span>
                     </div>
                     {req.reason && (
-                       <p className="text-sm text-gray-600 mt-2 italic">"{req.reason}"</p>
+                       <p className="text-sm text-gray-600 dark:text-gray-300 mt-2 italic">"{req.reason}"</p>
                     )}
                  </div>
 
@@ -105,7 +105,7 @@ export function RequestsView() {
           })}
 
           {visibleRequests.length === 0 && (
-             <div className="text-center text-gray-500 py-12 border border-dashed border-gray-200 rounded-lg bg-white/50">
+             <div className="text-center text-gray-500 dark:text-gray-400 py-12 border border-dashed border-gray-200 dark:border-gray-800 rounded-lg bg-white/50 dark:bg-white/5">
                No hay solicitudes para mostrar.
              </div>
           )}

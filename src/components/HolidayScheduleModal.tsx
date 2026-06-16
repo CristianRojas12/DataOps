@@ -53,7 +53,7 @@ export function HolidayScheduleModal({ open, onOpenChange, day, holidayName, pro
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[520px] bg-white border-gray-200 text-gray-900 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[520px] bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-normal">
             Programar feriado — {holidayName || day}
@@ -76,7 +76,7 @@ export function HolidayScheduleModal({ open, onOpenChange, day, holidayName, pro
               return (
                 <label
                   key={p.id}
-                  className="flex items-center gap-3 rounded-md border border-gray-200 bg-white px-3 py-2 cursor-pointer hover:bg-gray-50"
+                  className="flex items-center gap-3 rounded-md border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#13151f] px-3 py-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1f2233]"
                 >
                   <input
                     type="checkbox"
@@ -98,7 +98,7 @@ export function HolidayScheduleModal({ open, onOpenChange, day, holidayName, pro
         </div>
 
         <div className="flex justify-between pt-4">
-          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-gray-900 hover:bg-gray-100">
+          <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#1f2233]">
             Cancelar
           </Button>
           <Button type="button" onClick={handleSave} disabled={saving} className="bg-amber-400 hover:bg-amber-500 text-gray-900">

@@ -29,16 +29,16 @@ export function MainCalendarView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 text-gray-900 dark:text-gray-100 p-6 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0f111a] text-gray-900 dark:text-gray-100 p-6 overflow-hidden">
       {/* Calendar Header Tools */}
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="flex items-center bg-white rounded-md border border-gray-200 p-1">
-            <button onClick={prevMonth} className="p-1.5 hover:bg-white/5 rounded-md transition-colors"><ChevronLeft className="w-4 h-4" /></button>
+          <div className="flex items-center bg-white dark:bg-[#13151f] rounded-md border border-gray-200 dark:border-gray-800 p-1">
+            <button onClick={prevMonth} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1f2233] rounded-md transition-colors"><ChevronLeft className="w-4 h-4" /></button>
             <span className="min-w-[120px] text-center font-medium capitalize text-sm">
               {format(currentDate, "MMMM yyyy", { locale: es })}
             </span>
-            <button onClick={nextMonth} className="p-1.5 hover:bg-white/5 rounded-md transition-colors"><ChevronRight className="w-4 h-4" /></button>
+            <button onClick={nextMonth} className="p-1.5 hover:bg-gray-100 dark:hover:bg-[#1f2233] rounded-md transition-colors"><ChevronRight className="w-4 h-4" /></button>
           </div>
           <button
              onClick={() => setCurrentDate(new Date())}
