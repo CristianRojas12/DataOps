@@ -143,11 +143,11 @@ export function AssignGuardModal() {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
+                        <SelectTrigger className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700">
                           <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
+                      <SelectContent className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700">
                         {members.map((m) => (
                           <SelectItem key={m.id} value={m.id}>
                             {m.name}
@@ -171,11 +171,11 @@ export function AssignGuardModal() {
                       defaultValue={field.value}
                     >
                       <FormControl>
-                        <SelectTrigger className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
+                        <SelectTrigger className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700">
                           <SelectValue placeholder="Selecciona..." />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800">
+                      <SelectContent className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700">
                         <SelectItem value="Guardia Matutina">
                           Guardia Matutina
                         </SelectItem>

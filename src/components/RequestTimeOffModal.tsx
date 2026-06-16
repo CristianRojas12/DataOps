@@ -65,14 +65,14 @@ export function RequestTimeOffModal() {
             <Input
               value={currentMember?.name || session?.user?.email || ""}
               disabled
-              className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 opacity-80 cursor-not-allowed"
+              className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 opacity-80 cursor-not-allowed focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700"
             />
           </div>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Tipo de Permiso</label>
             <Select value={type} onValueChange={(val) => setType(val as TimeOffType)}>
-              <SelectTrigger className="bg-white dark:bg-[#13151f] border border-gray-300 dark:border-gray-800 focus:ring-2 focus:ring-amber-400 focus:border-amber-400 font-normal">
+              <SelectTrigger className="bg-white dark:bg-[#13151f] border border-gray-300 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700 font-normal">
                 <SelectValue placeholder="Seleccionar tipo" />
               </SelectTrigger>
               <SelectContent className="bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800">
@@ -130,7 +130,7 @@ export function RequestTimeOffModal() {
                placeholder="Comentarios adicionales..."
                value={reason}
                onChange={(e: any) => setReason(e.target.value)}
-               className="flex w-full rounded-md px-3 py-2 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 min-h-[80px]"
+               className="flex w-full rounded-md px-3 py-2 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE500] focus-visible:border-transparent focus-visible:outline-none dark:focus-visible:ring-gray-700 disabled:cursor-not-allowed disabled:opacity-50 bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 min-h-[80px]"
             />
           </div>
 

@@ -135,11 +135,11 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
         <div className="space-y-3">
           <div className="space-y-1">
             <Label>Nombre del producto</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800" />
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ej: Avance de Ventas" className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700" />
           </div>
           <div className="space-y-1">
             <Label>Canal de Teams (opcional)</Label>
-            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800" />
+            <Input value={teams} onChange={(e) => setTeams(e.target.value)} placeholder="Ej: Operaciones Daily" className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700" />
           </div>
 
           <div className="space-y-1">
@@ -154,18 +154,18 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     value={l.label}
                     onChange={(e) => setLinkAt(i, { label: e.target.value })}
                     placeholder="Nombre (ej: Link 1)"
-                    className="w-36 shrink-0 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800"
+                    className="w-36 shrink-0 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700"
                   />
                   <Input
                     value={l.url}
                     onChange={(e) => setLinkAt(i, { url: e.target.value })}
                     placeholder="https://..."
-                    className="flex-1 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800"
+                    className="flex-1 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700"
                   />
                   <select
                     value={l.kind}
                     onChange={(e) => setLinkAt(i, { kind: e.target.value as ProductLinkKind })}
-                    className="h-9 shrink-0 rounded-md bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 px-2 text-sm text-gray-900 dark:text-gray-100"
+                    className="h-9 shrink-0 rounded-md bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 px-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700"
                   >
                     <option value="databricks">Databricks</option>
                     <option value="powerbi">Power BI</option>
@@ -234,7 +234,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                     value={s}
                     onChange={(e) => setSchedAt(i, e.target.value)}
                     placeholder="06:00"
-                    className="w-32 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800"
+                    className="w-32 bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700"
                   />
                   <Button type="button" variant="ghost" size="icon" onClick={() => removeSchedRow(i)} className="text-red-500 hover:text-red-600 hover:bg-gray-100">
                     ✕

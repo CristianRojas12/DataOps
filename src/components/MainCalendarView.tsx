@@ -29,11 +29,11 @@ export function MainCalendarView() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 text-gray-900 dark:text-gray-100 p-6 overflow-hidden">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-[#0f111a] text-gray-900 dark:text-gray-100 p-6 overflow-hidden">
       {/* Calendar Header Tools */}
       <div className="flex items-center justify-between mb-6 shrink-0">
         <div className="flex items-center gap-4">
-          <div className="flex items-center bg-white rounded-md border border-gray-200 p-1">
+          <div className="flex items-center bg-white dark:bg-[#1a1c29] rounded-md border border-gray-200 dark:border-gray-800 p-1">
             <button onClick={prevMonth} className="p-1.5 hover:bg-white/5 rounded-md transition-colors"><ChevronLeft className="w-4 h-4" /></button>
             <span className="min-w-[120px] text-center font-medium capitalize text-sm">
               {format(currentDate, "MMMM yyyy", { locale: es })}
@@ -71,7 +71,7 @@ export function MainCalendarView() {
                   <span className="text-gray-500 dark:text-gray-400">Vacaciones</span>
                </div>
                <div className="flex items-center gap-1.5">
-                  <span className="w-3 h-3 rounded-sm bg-[#f1f5f9] dark:bg-[#6C6E7D]"></span>
+                  <span className="w-3 h-3 rounded-sm bg-slate-500 dark:bg-[#6C6E7D]"></span>
                   <span className="text-gray-500 dark:text-gray-400">Día Libre</span>
                </div>
             </div>
@@ -133,8 +133,7 @@ export function MainCalendarView() {
                                     <PopoverTrigger asChild>
                                        <div
 
-                                          className={`absolute inset-y-1.5 inset-x-0.5 rounded opacity-90 z-20 cursor-pointer hover:opacity-100 transition-opacity ${timeOff.type === "vacaciones" ? "bg-[#d1fae5] dark:bg-[#10b981]" : "bg-[#f1f5f9] dark:bg-[#6C6E7D]"}`}
-                                          // style={{ backgroundColor: timeOff.type === 'vacaciones' ? '#d1fae5' : '#f1f5f9' }}
+                                          className={`absolute inset-y-1.5 inset-x-0.5 rounded opacity-90 z-20 cursor-pointer hover:opacity-100 transition-opacity ${timeOff.type === "vacaciones" ? "bg-[#d1fae5] dark:bg-[#10b981]" : "bg-slate-500 text-white dark:bg-[#6C6E7D]"}`}
                                           title={`${timeOff.type === 'vacaciones' ? 'Vacaciones' : 'Día Libre'}`}
                                        />
                                     </PopoverTrigger>

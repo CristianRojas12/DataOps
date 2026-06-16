@@ -316,10 +316,9 @@ export function SummaryView() {
                               guard || timeOff
                                 ? "text-gray-900 dark:text-gray-100"
                                 : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1f2233]"
-                            } ${isHol && !guard && !timeOff ? 'text-amber-200 bg-amber-500/10 dark:bg-amber-500/20' : ''} ${isHol && (guard || timeOff) ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-[#13151f]' : ''} ${timeOff && !guard ? (timeOff.type === "vacaciones" ? "bg-[#d1fae5] dark:bg-[#10b981]" : "bg-[#f1f5f9] dark:bg-[#6C6E7D]") : ""}`}
+                            } ${isHol && !guard && !timeOff ? 'text-amber-200 bg-amber-500/10 dark:bg-amber-500/20' : ''} ${isHol && (guard || timeOff) ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-[#13151f]' : ''} ${timeOff && !guard ? (timeOff.type === "vacaciones" ? "bg-[#d1fae5] dark:bg-[#10b981]" : "bg-slate-500 text-white dark:bg-[#6C6E7D]") : ""}`}
                             style={{
                                ...(guard ? { backgroundColor: guard.type === "Guardia Matutina" ? "#F97316" : "#A855F7" } : {}),
-                               // inline styles moved to classes
                             }}
                             title={
                                timeOff
