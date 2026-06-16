@@ -151,7 +151,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
             <select
               value={shift}
               onChange={(e) => setShift(e.target.value as GuardType)}
-              className="h-9 w-full rounded-md bg-white border border-gray-200 px-2 text-sm text-gray-900"
+              className="h-9 w-full rounded-md bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 px-2 text-sm text-gray-900 dark:text-gray-100"
             >
               {SHIFTS.map((s) => (
                 <option key={s.value} value={s.value}>{s.label}</option>
