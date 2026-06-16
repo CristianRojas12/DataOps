@@ -61,7 +61,7 @@ export function CriticalProductsControls() {
         <select
           value={productsShiftFilter ?? "all"}
           onChange={(e) => setProductsShiftFilter(e.target.value as ProductsShiftFilter)}
-          className="h-9 rounded-md bg-white border border-gray-200 px-2 text-sm text-gray-900"
+          className="h-9 rounded-md bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 px-2 text-sm text-gray-900 dark:text-gray-100"
         >
           <option value="all">Todas</option>
           {SHIFTS.map((s) => (
