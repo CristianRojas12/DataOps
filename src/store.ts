@@ -23,9 +23,6 @@ interface UiState {
   // Time Off Request Modal state
   timeOffModalOpen: boolean;
   setTimeOffModalOpen: (open: boolean) => void;
-
-  theme: "light" | "dark";
-  setTheme: (theme: "light" | "dark") => void;
 }
 
 export const useUiStore = create<UiState>((set) => ({
@@ -48,17 +45,6 @@ export const useUiStore = create<UiState>((set) => ({
 
   timeOffModalOpen: false,
   setTimeOffModalOpen: (open) => set({ timeOffModalOpen: open }),
-
-  theme: (localStorage.getItem("dataops_theme") as "light" | "dark") || "light",
-  setTheme: (theme) => {
-    localStorage.setItem("dataops_theme", theme);
-    if (theme === "dark") {
-      document.documentElement.classList.add("dark");
-    } else {
-      document.documentElement.classList.remove("dark");
-    }
-    set({ theme });
-  },
 }));
 
 export type { CalendarDay };
