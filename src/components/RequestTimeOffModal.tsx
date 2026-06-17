@@ -51,7 +51,7 @@ export function RequestTimeOffModal() {
 
   return (
     <Dialog open={timeOffModalOpen} onOpenChange={setTimeOffModalOpen}>
-      <DialogContent className="bg-white border-gray-200 text-gray-900 sm:max-w-[425px]">
+      <DialogContent className="bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Solicitar Días Libres</DialogTitle>
           <DialogDescription className="text-gray-500">
@@ -65,17 +65,17 @@ export function RequestTimeOffModal() {
             <Input
               value={currentMember?.name || session?.user?.email || ""}
               disabled
-              className="bg-white border-gray-200 text-gray-600 opacity-80 cursor-not-allowed"
+              className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-400 opacity-80 cursor-not-allowed focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700"
             />
           </div>
 
           <div className="grid gap-2">
             <label className="text-sm font-medium">Tipo de Permiso</label>
             <Select value={type} onValueChange={(val) => setType(val as TimeOffType)}>
-              <SelectTrigger className="bg-white border border-gray-300 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none font-normal">
+              <SelectTrigger className="bg-white dark:bg-[#13151f] border border-gray-300 dark:border-gray-800 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700 font-normal">
                 <SelectValue placeholder="Seleccionar tipo" />
               </SelectTrigger>
-              <SelectContent className="bg-white border-gray-200">
+              <SelectContent className="bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800">
                 <SelectItem value="vacaciones">Vacaciones</SelectItem>
                 <SelectItem value="dia_guardia">Días X guardia</SelectItem>
               </SelectContent>
@@ -87,12 +87,12 @@ export function RequestTimeOffModal() {
               <label className="text-sm font-medium">Desde</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-white border-gray-200 ${!startDate && "text-gray-500"}`}>
+                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 ${!startDate ? "text-gray-500 dark:text-gray-400" : "dark:text-gray-100"}`}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {startDate ? format(startDate, "dd/MM/yyyy") : "Seleccionar"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
+                <PopoverContent className="w-auto p-0 bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800">
                   <Calendar
                     mode="single"
                     selected={startDate}
@@ -107,12 +107,12 @@ export function RequestTimeOffModal() {
               <label className="text-sm font-medium">Hasta</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-white border-gray-200 ${!endDate && "text-gray-500"}`}>
+                  <Button variant={"outline"} className={`w-full justify-start text-left font-normal bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 ${!endDate ? "text-gray-500 dark:text-gray-400" : "dark:text-gray-100"}`}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
                     {endDate ? format(endDate, "dd/MM/yyyy") : "Seleccionar"}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-white border-gray-200">
+                <PopoverContent className="w-auto p-0 bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800">
                   <Calendar
                     mode="single"
                     selected={endDate}
@@ -130,13 +130,13 @@ export function RequestTimeOffModal() {
                placeholder="Comentarios adicionales..."
                value={reason}
                onChange={(e: any) => setReason(e.target.value)}
-               className="flex w-full rounded-md px-3 py-2 text-sm placeholder:text-gray-500 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50 bg-white border border-gray-200 min-h-[80px]"
+               className="flex w-full rounded-md px-3 py-2 text-sm placeholder:text-gray-500 dark:placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FFE500] focus-visible:border-transparent focus-visible:outline-none dark:focus-visible:ring-gray-700 disabled:cursor-not-allowed disabled:opacity-50 bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 min-h-[80px]"
             />
           </div>
 
         </div>
         <div className="flex justify-end gap-3">
-          <Button variant="outline" onClick={() => setTimeOffModalOpen(false)} className="bg-white text-gray-900 border border-gray-300 hover:bg-gray-100">
+          <Button variant="outline" onClick={() => setTimeOffModalOpen(false)} className="text-gray-900 dark:text-gray-100 bg-white dark:bg-[#13151f] border border-gray-300 dark:border-gray-800 hover:bg-gray-100 dark:hover:bg-[#1f2233]">
             Cancelar
           </Button>
           <Button onClick={handleSubmit} className="bg-amber-400 hover:bg-amber-500 text-gray-900" disabled={!startDate || !endDate}>

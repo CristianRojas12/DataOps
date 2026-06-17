@@ -180,7 +180,7 @@ export function SummaryView() {
     <div className="flex h-[calc(100vh-100px)] gap-6 p-6 overflow-hidden">
       {/* Left Panel: Summary Stats (Fixed/Sticky) */}
       <div className="w-80 flex-shrink-0 space-y-6 sticky top-0 self-start overflow-y-auto max-h-full pr-2">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <div className="bg-white dark:bg-[#1a1c29] p-4 rounded-lg border border-gray-200 dark:border-gray-800">
           <div className="flex justify-between items-center mb-3">
              <label className="text-sm font-medium">
                Métricas ({filterMode === 'currentMonth' ? format(currentMonthDate, "MMMM", { locale: es }).charAt(0).toUpperCase() + format(currentMonthDate, "MMMM", { locale: es }).slice(1) : 'YTD'})
@@ -194,8 +194,8 @@ export function SummaryView() {
              </button>
           </div>
           <div className="text-sm flex justify-between">
-            <span className="text-gray-500">Promedio de días/miembro:</span>
-            <span className="font-semibold text-gray-900">{teamAverage.toFixed(1)} días</span>
+            <span className="text-gray-500 dark:text-gray-400">Promedio de días/miembro:</span>
+            <span className="font-semibold text-gray-900 dark:text-gray-100">{teamAverage.toFixed(1)} días</span>
           </div>
         </div>
 
@@ -223,14 +223,14 @@ export function SummaryView() {
               return (
                 <div
                   key={member.id}
-                  className={`p-3 rounded-md border cursor-pointer transition-colors ${isSelected ? 'bg-indigo-900/30 border-indigo-500/50' : 'bg-white border-gray-200 hover:bg-white'}`}
+                  className={`p-3 rounded-md border cursor-pointer transition-colors ${isSelected ? 'bg-indigo-900/30 border-indigo-500/50' : 'bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-[#1f2233]'}`}
                   onClick={() => {
                     setSelectedMemberId(member.id);
                     localStorage.setItem("dataops_selected_member", member.id);
                   }}
                 >
                   <div className="flex justify-between items-start mb-1">
-                    <span className="font-medium text-sm text-gray-900">
+                    <span className="font-medium text-sm text-gray-900 dark:text-gray-100">
                        {member.name}
                     </span>
                     {isBurnoutRisk && (
@@ -238,13 +238,13 @@ export function SummaryView() {
                         <TooltipTrigger asChild>
                           <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
                         </TooltipTrigger>
-                        <TooltipContent className="bg-white border-gray-200 text-gray-900 max-w-[200px]">
+                        <TooltipContent className="bg-white border-gray-200 text-gray-900 dark:text-gray-100 max-w-[200px]">
                           <p>{burnoutReason}</p>
                         </TooltipContent>
                       </Tooltip>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500 flex flex-col gap-0.5">
+                  <div className="text-xs text-gray-500 dark:text-gray-400 flex flex-col gap-0.5">
                     <span>Total: {metrics.totalDays} días (Fines de semana: {metrics.weekendDays} | Feriados: {metrics.holidayCount})</span>
                     <span>Vacaciones: {metrics.availableVacationDays} | Días Libres: {metrics.availableTimeOffDays}</span>
                   </div>
@@ -257,7 +257,7 @@ export function SummaryView() {
 
       {/* Right Panel: Month Cards Grid (Scrollable) */}
       <div className="flex-1 overflow-y-auto pr-4 pb-12">
-        <h2 className="text-xl font-medium mb-6 sticky top-0 bg-gray-50 py-2 z-10">
+        <h2 className="text-xl font-medium mb-6 sticky top-0 bg-gray-50 dark:bg-[#0f111a] py-2 z-10">
           Calendario de {selectedMember?.name || "..."}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -277,7 +277,7 @@ export function SummaryView() {
 
             return (
               <div key={month.toISOString()} ref={el => { monthRefs.current[index] = el; }}>
-                <Card className={`bg-white border-gray-200 text-gray-900 transition-all duration-300 min-h-[300px] ${isCurrentMonth ? 'ring-2 ring-indigo-500 shadow-lg shadow-indigo-500/10' : ''}`}>
+                <Card className={`bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 transition-all duration-300 min-h-[300px] ${isCurrentMonth ? 'ring-2 ring-indigo-500 shadow-lg shadow-indigo-500/10' : ''}`}>
                   <CardHeader className="text-center pb-2">
                     <CardTitle className="text-base font-normal capitalize flex justify-center items-center gap-2">
                       {format(month, "MMMM", { locale: es })}
@@ -285,14 +285,14 @@ export function SummaryView() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-500">
+                    <div className="grid grid-cols-7 gap-1 text-center text-xs mb-2 text-gray-500 dark:text-gray-400">
                       {["L", "M", "M", "J", "V", "S", "D"].map((d, i) => (
                         <div key={i}>{d}</div>
                       ))}
                     </div>
                     <div className="grid grid-cols-7 gap-1 text-sm">
                       {prefixDays.map((_, i) => (
-                        <div key={`empty-prefix-${i}`} className="h-8"></div>
+                        <div key={`empty-prefix-${i}`} className="h-8 dark:bg-[#13151f] rounded-md"></div>
                       ))}
                       {monthDays.map((day, i) => {
                         const guard = guards.find(g =>
@@ -314,12 +314,11 @@ export function SummaryView() {
                             key={i}
                             className={`h-8 flex items-center justify-center rounded-md relative overflow-hidden ${
                               guard || timeOff
-                                ? "text-gray-900"
-                                : "text-gray-500 hover:bg-white/5"
-                            } ${isHol && !guard && !timeOff ? 'text-amber-200 bg-amber-500/10' : ''} ${isHol && (guard || timeOff) ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-[#13151f]' : ''}`}
+                                ? "text-gray-900 dark:text-gray-100"
+                                : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1f2233]"
+                            } ${isHol && !guard && !timeOff ? 'text-amber-200 bg-amber-500/10 dark:bg-amber-500/20' : ''} ${isHol && (guard || timeOff) ? 'ring-2 ring-amber-400 ring-offset-1 ring-offset-white dark:ring-offset-[#13151f]' : ''} ${timeOff && !guard ? (timeOff.type === "vacaciones" ? "bg-[#d1fae5] dark:bg-[#10b981]" : "bg-slate-500 text-white dark:bg-[#6C6E7D]") : ""}`}
                             style={{
                                ...(guard ? { backgroundColor: guard.type === "Guardia Matutina" ? "#F97316" : "#A855F7" } : {}),
-                               ...(timeOff ? { backgroundColor: timeOff.type === 'vacaciones' ? '#d1fae5' : '#f1f5f9' } : {}),
                             }}
                             title={
                                timeOff
@@ -342,7 +341,7 @@ export function SummaryView() {
                         );
                       })}
                       {suffixDays.map((_, i) => (
-                         <div key={`empty-suffix-${i}`} className="h-8"></div>
+                         <div key={`empty-suffix-${i}`} className="h-8 dark:bg-[#13151f] rounded-md"></div>
                       ))}
                     </div>
                   </CardContent>
