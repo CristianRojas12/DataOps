@@ -1,10 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
 
 import { useProductsContext } from "../productsContext";
 import { useProductNotifications } from "../hooks/useProductNotifications";
 import type { CriticalProduct, ProductTask } from "../productsTypes";
-import { WEEKDAYS } from "../productsTypes";
+import { WEEKDAYS, DEFAULT_SHIFT, SHIFTS } from "../productsTypes";
 import { ProductFormModal } from "./ProductFormModal";
+import { HolidayScheduleModal } from "./HolidayScheduleModal";
 import { LoadingSpinner } from "./LoadingSpinner";
 import { Button } from "@/components/ui/button";
 import { useGuardContext } from "../context";
@@ -14,17 +16,39 @@ function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-const ROW_GRID = "60px 150px minmax(240px,1fr) 100px minmax(380px,1.6fr)";
+// Hora · Producto · Canal Teams (más angosto) · Notas · Estado · Acciones
+const ROW_GRID = "60px 150px minmax(150px,0.7fr) minmax(200px,1fr) 100px minmax(360px,1.4fr)";
+
+// Celda de anotación permanente por horario. Estado local para no perder lo que se
+// está tipeando cuando el poll/reloj re-renderiza; sincroniza desde el server solo
+// cuando el campo no está enfocado. Guarda en blur si cambió.
+function NoteCell({ value, onSave }: { value: string; onSave: (note: string) => void }) {
+  const [text, setText] = useState(value);
+  const [focused, setFocused] = useState(false);
+  useEffect(() => { if (!focused) setText(value); }, [value, focused]);
+  return (
+    <input
+      value={text}
+      onChange={(e) => setText(e.target.value)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => { setFocused(false); if (text !== value) onSave(text); }}
+      placeholder="Agregar nota…"
+      title={text || "Agregar nota"}
+      className="w-full h-8 rounded-md bg-white/70 border border-gray-200 px-2 text-xs text-gray-900 placeholder:text-gray-400 dark:bg-[#13151f]/70 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500"
+    />
+  );
+}
 
 export function CriticalProductsView() {
-  const { products, doneKeys, isLoading, markDone, unmarkDone, removeProduct } = useProductsContext();
-  const { session } = useGuardContext();
+  const { products, doneKeys, holidayProductsByDay, notesByKey, isLoading, markDone, unmarkDone, removeProduct, setHolidayProducts, setNote } = useProductsContext();
+  const { session, calendarDim } = useGuardContext();
   const isAdmin = session?.role === 'admin';
-  const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen } = useUiStore();
+  const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen, productsShiftFilter } = useUiStore();
 
   const [now, setNow] = useState(new Date());
   const [editing, setEditing] = useState<CriticalProduct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [holidayModal, setHolidayModal] = useState<{ day: string; name: string } | null>(null);
 
   // Reloj para recalcular estados (próximo/pendiente) y reflejar la hora.
   useEffect(() => {
@@ -39,21 +63,55 @@ export function CriticalProductsView() {
     }
   }, []);
 
-  useProductNotifications(products, productsAlertsEnabled, productsAlertVolume);
-
   const todayDow = now.getDay(); // 0=Dom … 6=Sáb
+  const todayKey = format(now, "yyyy-MM-dd");
+
+  // ¿Hoy es feriado y está configurado (≥1 producto programado)? dim_calendario es la fuente.
+  const todayIsHoliday = calendarDim.some((r) => r.date_key === todayKey && r.is_holiday);
+  const todayIsConfiguredHoliday = todayIsHoliday && (holidayProductsByDay[todayKey]?.size ?? 0) > 0;
+
+  // Feriados en las próximas 48hs (hoy / +1d / +2d) para el banner de admin.
+  const upcomingHolidays = useMemo(() => {
+    if (!isAdmin) return [] as { day: string; name: string }[];
+    const out: { day: string; name: string }[] = [];
+    for (let offset = 0; offset <= 2; offset++) {
+      const d = new Date(now);
+      d.setDate(d.getDate() + offset);
+      const key = format(d, "yyyy-MM-dd");
+      const row = calendarDim.find((r) => r.date_key === key && r.is_holiday);
+      if (row) out.push({ day: key, name: row.holiday_name ?? "Feriado" });
+    }
+    return out;
+  }, [isAdmin, calendarDim, now]);
+
+  // Productos visibles hoy. En feriado configurado se muestran solo los programados (en vez del
+  // filtro por día de semana); la guardia sigue aplicando en ambos casos.
+  const visibleProducts = useMemo(() => {
+    const holidaySet = todayIsConfiguredHoliday ? holidayProductsByDay[todayKey] : null;
+    return products.filter((p) => {
+      if (!p.enabled) return false;
+      if (holidaySet) {
+        if (!holidaySet.has(p.id)) return false; // feriado configurado: solo lo programado
+      } else if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) {
+        return false; // día normal: no ejecuta hoy
+      }
+      if (productsShiftFilter && productsShiftFilter !== "all" && (p.shift ?? DEFAULT_SHIFT) !== productsShiftFilter) return false;
+      return true;
+    });
+  }, [products, todayDow, productsShiftFilter, todayIsConfiguredHoliday, holidayProductsByDay, todayKey]);
+
+  // Las alertas (notificación + tilín) respetan el filtro: solo avisan de lo visible.
+  useProductNotifications(visibleProducts, productsAlertsEnabled, productsAlertVolume);
 
   const tasks = useMemo<ProductTask[]>(() => {
     const list: ProductTask[] = [];
-    for (const p of products) {
-      if (!p.enabled) continue;
-      if (!(p.days ?? [1, 2, 3, 4, 5]).includes(todayDow)) continue; // no ejecuta hoy
+    for (const p of visibleProducts) {
       for (const t of p.schedules ?? []) {
         list.push({ product: p, time: t, done: doneKeys.has(`${p.id}|${t}`) });
       }
     }
     return list.sort((a, b) => a.time.localeCompare(b.time));
-  }, [products, doneKeys, todayDow]);
+  }, [visibleProducts, doneKeys]);
 
   const cur = hm(now);
 
@@ -79,6 +137,33 @@ export function CriticalProductsView() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-6 pb-12">
+        {/* Aviso: hoy es un feriado configurado, se muestra solo lo programado. */}
+        {todayIsConfiguredHoliday && (
+          <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+            🎉 Hoy es feriado — mostrando solo los productos programados para hoy.
+          </div>
+        )}
+
+        {/* Banner de admin: feriados próximos (48hs) a configurar. */}
+        {upcomingHolidays.length > 0 && (
+          <div className="mb-4 space-y-2">
+            {upcomingHolidays.map((h) => {
+              const count = holidayProductsByDay[h.day]?.size ?? 0;
+              return (
+                <div key={h.day} className="flex items-center justify-between rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+                  <div className="text-sm text-amber-900">
+                    <span className="font-medium">Feriado próximo:</span> {h.name} ({h.day}).{" "}
+                    {count > 0 ? `${count} producto(s) programado(s).` : "Sin productos programados aún."}
+                  </div>
+                  <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={() => setHolidayModal(h)}>
+                    Programar feriado
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
         {tasks.length === 0 ? (
           <p className="text-gray-500 text-center py-16">
             No hay productos configurados. Hacé clic en "+ Agregar producto".
@@ -93,6 +178,7 @@ export function CriticalProductsView() {
               <div>Hora</div>
               <div>Producto</div>
               <div>Canal Teams</div>
+              <div>Notas</div>
               <div>Estado</div>
               <div className="text-right">Acciones</div>
             </div>
@@ -108,9 +194,12 @@ export function CriticalProductsView() {
                     className="grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-125 hover:ring-2 hover:ring-white/40"
                     style={{ gridTemplateColumns: ROW_GRID, backgroundColor: bg }}
                   >
-                    <div className="font-bold text-sm text-gray-900">{task.time}</div>
-                    <div className="text-sm text-gray-900">{task.product.name}</div>
-                    <div className="text-xs text-blue-600">{task.product.teams_channel || "—"}</div>
+                    <div className="font-bold text-sm text-gray-900 dark:text-gray-100">{task.time}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{task.product.name}</div>
+                    <div className="text-xs text-blue-600 dark:text-blue-400">{task.product.teams_channel || "—"}</div>
+                    <div>
+                      <NoteCell value={notesByKey[key] ?? ""} onSave={(v) => setNote(task.product.id, task.time, v)} />
+                    </div>
                     <div className="text-xs font-medium">
                       {task.done ? (
                         <span className="text-emerald-700">✓ Listo</span>
@@ -170,7 +259,15 @@ export function CriticalProductsView() {
                   {products.map((p) => (
                     <div key={p.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
                       <div>
-                        <div className="font-medium">{p.name}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{p.name}</span>
+                          <span
+                            className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full text-white"
+                            style={{ backgroundColor: (p.shift ?? DEFAULT_SHIFT) === "Guardia Vespertina" ? "#A855F7" : "#F97316" }}
+                          >
+                            {SHIFTS.find((s) => s.value === (p.shift ?? DEFAULT_SHIFT))?.label ?? "Matutina"}
+                          </span>
+                        </div>
                         <div className="text-xs text-muted-foreground">
                           Días: {WEEKDAYS.filter((d) => (p.days ?? []).includes(d.value)).map((d) => d.label).join(" · ") || "Sin días"}
                         </div>
@@ -200,6 +297,18 @@ export function CriticalProductsView() {
         onOpenChange={(v) => { setProductsAddModalOpen(v); if (!v) setEditing(null); }}
         product={editing}
       />
+
+      {holidayModal && (
+        <HolidayScheduleModal
+          open={!!holidayModal}
+          onOpenChange={(v) => { if (!v) setHolidayModal(null); }}
+          day={holidayModal.day}
+          holidayName={holidayModal.name}
+          products={products}
+          selectedIds={holidayProductsByDay[holidayModal.day] ?? new Set()}
+          onSave={(ids) => setHolidayProducts(holidayModal.day, ids)}
+        />
+      )}
     </div>
   );
 }

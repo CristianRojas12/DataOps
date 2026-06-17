@@ -17,6 +17,8 @@ function doneKey(productId: string, time: string): string {
 interface ProductsContextType {
   products: CriticalProduct[];
   doneKeys: Set<string>; // claves "productId|HH:MM" hechas hoy
+  holidayProductsByDay: Record<string, Set<string>>; // "yyyy-MM-dd" -> set de product_id que corren ese feriado
+  notesByKey: Record<string, string>; // "productId|HH:MM" -> anotación permanente del horario
   isLoading: boolean;
   refresh: () => Promise<void>;
   addProduct: (data: CriticalProductInput) => Promise<void>;
@@ -24,6 +26,8 @@ interface ProductsContextType {
   removeProduct: (id: string) => Promise<void>;
   markDone: (productId: string, time: string) => Promise<void>;
   unmarkDone: (productId: string, time: string) => Promise<void>;
+  setHolidayProducts: (day: string, productIds: string[]) => Promise<void>;
+  setNote: (productId: string, time: string, note: string) => Promise<void>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -31,12 +35,16 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 export function CriticalProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<CriticalProduct[]>([]);
   const [doneKeys, setDoneKeys] = useState<Set<string>>(new Set());
+  const [holidayProductsByDay, setHolidayProductsByDay] = useState<Record<string, Set<string>>>({});
+  const [notesByKey, setNotesByKey] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const [prodRes, doneRes] = await Promise.all([
+    const [prodRes, doneRes, holRes, notesRes] = await Promise.all([
       supabase.from("critical_products").select("*").order("name"),
       supabase.from("product_done").select("product_id, time").eq("day", todayStr()),
+      supabase.from("critical_product_holidays").select("product_id, day").gte("day", todayStr()),
+      supabase.from("product_notes").select("product_id, time, note"),
     ]);
 
     if (prodRes.error) console.error("Error fetching critical_products:", prodRes.error);
@@ -46,11 +54,30 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
           ...p,
           links: Array.isArray(p.links) ? p.links : [],
           days: Array.isArray(p.days) ? p.days : [1, 2, 3, 4, 5],
+          shift: p.shift === "Guardia Vespertina" ? "Guardia Vespertina" : "Guardia Matutina",
         })) as CriticalProduct[],
       );
 
     if (doneRes.error) console.error("Error fetching product_done:", doneRes.error);
     else setDoneKeys(new Set((doneRes.data ?? []).map((d: any) => doneKey(d.product_id, d.time))));
+
+    if (holRes.error) console.error("Error fetching critical_product_holidays:", holRes.error);
+    else {
+      const byDay: Record<string, Set<string>> = {};
+      for (const r of (holRes.data ?? []) as any[]) {
+        (byDay[r.day] ??= new Set()).add(r.product_id);
+      }
+      setHolidayProductsByDay(byDay);
+    }
+
+    if (notesRes.error) console.error("Error fetching product_notes:", notesRes.error);
+    else {
+      const byKey: Record<string, string> = {};
+      for (const r of (notesRes.data ?? []) as any[]) {
+        if (r.note) byKey[doneKey(r.product_id, r.time)] = r.note;
+      }
+      setNotesByKey(byKey);
+    }
   }, []);
 
   useEffect(() => {
@@ -105,9 +132,41 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
     if (error) console.error("Error unmarking done", error);
   };
 
+  // Reemplaza la programación de un feriado: borra las filas de esa fecha e inserta las nuevas.
+  const setHolidayProducts = async (day: string, productIds: string[]) => {
+    const { error: delError } = await supabase.from("critical_product_holidays").delete().eq("day", day);
+    if (delError) { console.error("Error clearing holiday products", delError); throw delError; }
+    if (productIds.length > 0) {
+      const rows = productIds.map((product_id) => ({ product_id, day }));
+      const { error: insError } = await supabase.from("critical_product_holidays").insert(rows);
+      if (insError) { console.error("Error setting holiday products", insError); throw insError; }
+    }
+    await refresh();
+  };
+
+  // Anotación permanente por (producto, horario). Upsert; vacío = borra la fila.
+  const setNote = async (productId: string, time: string, note: string) => {
+    const trimmed = note.trim();
+    const key = doneKey(productId, time);
+    setNotesByKey((prev) => {
+      const next = { ...prev };
+      if (trimmed) next[key] = trimmed; else delete next[key];
+      return next;
+    });
+    if (!trimmed) {
+      const { error } = await supabase.from("product_notes").delete().eq("product_id", productId).eq("time", time);
+      if (error) console.error("Error deleting note", error);
+    } else {
+      const { error } = await supabase
+        .from("product_notes")
+        .upsert({ product_id: productId, time, note: trimmed }, { onConflict: "product_id,time" });
+      if (error) console.error("Error saving note", error);
+    }
+  };
+
   return (
     <ProductsContext.Provider
-      value={{ products, doneKeys, isLoading, refresh, addProduct, updateProduct, removeProduct, markDone, unmarkDone }}
+      value={{ products, doneKeys, holidayProductsByDay, notesByKey, isLoading, refresh, addProduct, updateProduct, removeProduct, markDone, unmarkDone, setHolidayProducts, setNote }}
     >
       {children}
     </ProductsContext.Provider>

@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
+import { isWithinInterval } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { useUiStore } from "../store";
 import { useGuardContext } from "../context";
+import { SHIFTS } from "../productsTypes";
+import type { ProductsShiftFilter } from "../store";
 import { primeAudio, playNotificationChime } from "../lib/sound";
 
 function hm(d: Date): string {
@@ -10,7 +13,7 @@ function hm(d: Date): string {
 
 export function CriticalProductsControls() {
   const [now, setNow] = useState(new Date());
-  const { session } = useGuardContext();
+  const { session, guards } = useGuardContext();
   const isAdmin = session?.role === 'admin';
   const {
     productsAlertsEnabled,
@@ -18,12 +21,25 @@ export function CriticalProductsControls() {
     productsAlertVolume,
     setProductsAlertVolume,
     setProductsAddModalOpen,
+    productsShiftFilter,
+    setProductsShiftFilter,
   } = useUiStore();
 
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 15_000);
     return () => clearInterval(id);
   }, []);
+
+  // Auto-detección: la primera vez (filtro sin decidir) selecciona tu guardia de hoy
+  // según la tabla guards. Si no tenés guardia asignada hoy, muestra "Todas".
+  useEffect(() => {
+    if (productsShiftFilter !== null) return;
+    const today = new Date();
+    const myGuard = guards.find(
+      (g) => g.memberId === session.memberId && isWithinInterval(today, { start: g.startDate, end: g.endDate }),
+    );
+    setProductsShiftFilter(myGuard ? myGuard.type : "all");
+  }, [guards, session.memberId, productsShiftFilter, setProductsShiftFilter]);
 
   const toggleAlerts = (checked: boolean) => {
     setProductsAlertsEnabled(checked);
@@ -40,6 +56,19 @@ export function CriticalProductsControls() {
 
   return (
     <div className="flex items-center gap-4">
+      <label className="flex items-center gap-2 text-sm text-gray-500 select-none" title="Filtrar productos por guardia">
+        <span>Guardia</span>
+        <select
+          value={productsShiftFilter ?? "all"}
+          onChange={(e) => setProductsShiftFilter(e.target.value as ProductsShiftFilter)}
+          className="h-9 rounded-md bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 px-2 text-sm text-gray-900 dark:text-gray-100"
+        >
+          <option value="all">Todas</option>
+          {SHIFTS.map((s) => (
+            <option key={s.value} value={s.value}>{s.label}</option>
+          ))}
+        </select>
+      </label>
       <label className="flex items-center gap-2 text-sm text-gray-500 cursor-pointer select-none">
         <input
           type="checkbox"
