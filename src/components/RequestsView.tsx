@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { useGuardContext } from "../context";
-import { CheckCircle2, XCircle, Clock, Trash2 } from "lucide-react";
+import { CheckCircle2, XCircle, Clock, Trash2, Ban } from "lucide-react";
 import { Button } from "./ui/button";
 
 export function RequestsView() {
@@ -16,6 +16,7 @@ export function RequestsView() {
     switch (status) {
       case 'approved': return <CheckCircle2 className="w-5 h-5 text-green-500" />;
       case 'rejected': return <XCircle className="w-5 h-5 text-red-500" />;
+      case 'cancelled': return <Ban className="w-5 h-5 text-gray-500" />;
       default: return <Clock className="w-5 h-5 text-yellow-500" />;
     }
   };
@@ -24,6 +25,7 @@ export function RequestsView() {
     switch (status) {
       case 'approved': return <span className="text-green-500">Aprobado</span>;
       case 'rejected': return <span className="text-red-500">Rechazado</span>;
+      case 'cancelled': return <span className="text-gray-500 line-through">Cancelado</span>;
       default: return <span className="text-yellow-500">Pendiente</span>;
     }
   };
@@ -57,13 +59,13 @@ export function RequestsView() {
                     )}
                  </div>
 
-                 <div className="flex items-center gap-6">
+                 <div className={`flex items-center gap-6 ${req.status === 'cancelled' ? 'opacity-50' : ''}`}>
                     <div className="flex items-center gap-2">
                        {getStatusIcon(req.status)}
                        <span className="font-medium text-sm">{getStatusLabel(req.status)}</span>
                     </div>
 
-                    {isAdmin && (
+                    {isAdmin && req.status !== 'cancelled' && (
                        <div className="flex items-center gap-2">
                           {req.status === 'pending' && (
                              <>

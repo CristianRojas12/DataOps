@@ -44,7 +44,7 @@ export interface DimCalendarRow {
 }
 
 export type TimeOffType = 'vacaciones' | 'dia_guardia';
-export type TimeOffStatus = 'pending' | 'approved' | 'rejected';
+export type TimeOffStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
 
 export interface TimeOffRequestDB {
   id: string;
