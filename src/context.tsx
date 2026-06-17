@@ -167,6 +167,13 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
+  useEffect(() => {
+    if (window.location.hash.includes("error_code=otp_expired")) {
+      alert("El enlace de recuperación ha caducado o fue bloqueado por el escáner de su correo. Por favor, solicite uno nuevo, haga clic derecho en el enlace del correo y use 'Copiar dirección del enlace' para pegarlo en su navegador.");
+      window.history.replaceState(null, "", window.location.pathname + window.location.search);
+    }
+  }, []);
+
   const addMember = async (name: string, role: Role = 'user') => {
     if (session.role !== 'admin') return alert("Permiso denegado");
     const { data, error } = await supabase
@@ -302,9 +309,12 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     if (session.role !== 'admin') return alert("Permiso denegado");
 
     try {
+      const adminName = members.find(m => m.id === session.memberId)?.name || 'Admin';
+      const reasonMsg = 'Cancelado por: ' + adminName;
+
       const { error } = await supabase
         .from('time_off_requests')
-        .delete()
+        .update({ status: 'cancelled', reason: reasonMsg })
         .eq('id', id);
 
       if (error) {
@@ -312,7 +322,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
         throw error;
       }
 
-      setTimeOffRequests((prev) => prev.filter(r => r.id !== id));
+      setTimeOffRequests((prev) => prev.map(r => r.id === id ? { ...r, status: 'cancelled', reason: reasonMsg } : r));
     } catch (e) {
       console.error("Failed to delete time off request", e);
       alert("Hubo un problema al intentar eliminar la solicitud.");

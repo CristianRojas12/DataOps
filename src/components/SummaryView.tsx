@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, startOfWeek,  isSunday, isSaturday, lastDayOfMonth } from "date-fns";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isWithinInterval, startOfWeek,  isSunday, isSaturday, lastDayOfMonth, addMonths, setDate, endOfDay } from "date-fns";
 import { es } from "date-fns/locale";
 import { useGuardContext } from "../context";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -72,8 +72,14 @@ export function SummaryView() {
   const getMetricsForMember = (memberId: string) => {
     const memberGuards = guards.filter((g) => g.memberId === memberId);
 
+    const today = new Date();
+
     // Time off metric calculation
-    const allAssignedDays = memberGuards.length;
+    const allAssignedDays = memberGuards.filter((g) => {
+      // 10th day of the strictly next month after g.startDate
+      const limitDate = endOfDay(setDate(addMonths(g.startDate, 1), 10));
+      return today.getTime() <= limitDate.getTime();
+    }).length;
 
     const approvedDiaGuardiaRequests = timeOffRequests.filter(r =>
        r.memberId === memberId &&
@@ -96,8 +102,6 @@ export function SummaryView() {
     let totalDays = 0;
     let weekendDays = 0;
     let holidayCount = 0;
-
-    const today = new Date();
 
     memberGuards.forEach((g) => {
       const days = eachDayOfInterval({ start: g.startDate, end: g.endDate });
@@ -238,7 +242,7 @@ export function SummaryView() {
                         <TooltipTrigger asChild>
                           <AlertTriangle className="h-4 w-4 text-orange-500 shrink-0" />
                         </TooltipTrigger>
-                        <TooltipContent className="bg-white border-gray-200 text-gray-900 dark:text-gray-100 max-w-[200px]">
+                        <TooltipContent className="bg-white border-gray-200 text-gray-900 dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 max-w-[200px]">
                           <p>{burnoutReason}</p>
                         </TooltipContent>
                       </Tooltip>
