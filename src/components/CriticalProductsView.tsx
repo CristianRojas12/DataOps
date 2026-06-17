@@ -165,14 +165,14 @@ export function CriticalProductsView() {
         )}
 
         {tasks.length === 0 ? (
-          <p className="text-gray-500 text-center py-16">
+          <p className="text-gray-500 dark:text-gray-400 text-center py-16">
             No hay productos configurados. Hacé clic en "+ Agregar producto".
           </p>
         ) : (
           <>
             {/* Encabezado de columnas */}
             <div
-              className="grid items-center gap-3 px-4 py-2 text-xs uppercase tracking-wide text-gray-500"
+              className="grid items-center gap-3 px-4 py-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-400"
               style={{ gridTemplateColumns: ROW_GRID }}
             >
               <div>Hora</div>
@@ -186,13 +186,13 @@ export function CriticalProductsView() {
             <div className="space-y-1.5">
               {tasks.map((task) => {
                 const past = task.time < cur && !task.done;
-                const bg = task.done ? "#d1fae5" : past ? "#fee2e2" : "#f1f5f9"; // Updated for light mode
+                const bgClass = task.done ? "bg-[#d1fae5] dark:bg-[#064e3b]" : past ? "bg-[#fee2e2] dark:bg-[#7f1d1d]" : "bg-[#f1f5f9] dark:bg-[#13151f]";
                 const key = `${task.product.id}|${task.time}`;
                 return (
                   <div
                     key={key}
-                    className="grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-125 hover:ring-2 hover:ring-white/40"
-                    style={{ gridTemplateColumns: ROW_GRID, backgroundColor: bg }}
+                    className={`grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-125 hover:ring-2 hover:ring-white/40 ${bgClass}`}
+                    style={{ gridTemplateColumns: ROW_GRID }}
                   >
                     <div className="font-bold text-sm text-gray-900 dark:text-gray-100">{task.time}</div>
                     <div className="text-sm text-gray-900 dark:text-gray-100">{task.product.name}</div>
@@ -206,7 +206,7 @@ export function CriticalProductsView() {
                       ) : past ? (
                         <span className="text-red-600">⚠ Pendiente</span>
                       ) : (
-                        <span className="text-blue-600">Próximo</span>
+                        <span className="text-blue-600 dark:text-blue-400">Próximo</span>
                       )}
                     </div>
                     <div className="flex flex-wrap items-center justify-end gap-2">
@@ -237,11 +237,11 @@ export function CriticalProductsView() {
                         );
                       })}
                       {task.done ? (
-                        <Button size="sm" variant="outline" className="h-8 bg-white text-gray-900 border border-gray-300 hover:bg-gray-100" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
+                        <Button size="sm" variant="outline" className="h-8 bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#1f2233]" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
                           ↩
                         </Button>
                       ) : (
-                        <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={() => markDone(task.product.id, task.time)}>
+                        <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900 dark:text-gray-100" onClick={() => markDone(task.product.id, task.time)}>
                           Listo
                         </Button>
                       )}
@@ -254,10 +254,10 @@ export function CriticalProductsView() {
             {/* Gestión de productos (alta/edición/baja) */}
             {isAdmin && (
               <div className="mt-8">
-                <h3 className="text-sm font-medium text-gray-500 mb-3">Productos configurados</h3>
+                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">Productos configurados</h3>
                 <div className="space-y-1.5">
                   {products.map((p) => (
-                    <div key={p.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-4 py-3 shadow-sm">
+                    <div key={p.id} className="flex items-center justify-between bg-white dark:bg-[#1a1c29] border border-gray-200 dark:border-gray-800 rounded-lg px-4 py-3 shadow-sm">
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{p.name}</span>
@@ -276,7 +276,7 @@ export function CriticalProductsView() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button size="sm" variant="outline" className="h-8 bg-white text-gray-900 border border-gray-300 hover:bg-gray-100" onClick={() => openEdit(p)}>
+                        <Button size="sm" variant="outline" className="h-8 bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#1f2233]" onClick={() => openEdit(p)}>
                           Editar
                         </Button>
                         <Button size="sm" variant="ghost" className="h-8 text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => removeProduct(p.id)}>

@@ -32,6 +32,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<UserSession>({ user: null, role: 'user', memberId: null });
   const [calendarDim, setCalendarDim] = useState<DimCalendarRow[]>([]);
   const [authLoading, setAuthLoading] = useState(true);
+  const [recoveryMode, setRecoveryMode] = useState(false);
 
   const fetchCalendarDim = async () => {
     const { data, error } = await supabase.from('dim_calendario').select('*').eq('year', new Date().getFullYear());
@@ -156,7 +157,10 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
       handleSessionUpdate(currentSession);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
+      if (event === "PASSWORD_RECOVERY") {
+        setRecoveryMode(true);
+      }
       handleSessionUpdate(newSession);
     });
 
@@ -324,7 +328,7 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
   }
 
   if (!session.user) {
-    return <LoginView />;
+    return <LoginView recoveryMode={recoveryMode} setRecoveryMode={setRecoveryMode} />;
   }
 
   return (
