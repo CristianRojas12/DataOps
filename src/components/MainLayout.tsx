@@ -101,7 +101,8 @@ export function MainLayout() {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 bg-gray-50 dark:bg-[#0f111a]">
+        <div className="max-w-[1600px] mx-auto w-full flex flex-col h-full bg-white dark:bg-[#13151f] shadow-sm border-x border-gray-200 dark:border-gray-800">
          {/* Top Header - Strict UI Rule: Standardized central area for Action buttons */}
          <div className="h-16 flex items-center justify-end px-6 border-b border-gray-200 dark:border-gray-800 shrink-0 bg-white dark:bg-[#1a1c29] gap-4">
             {activeTab === "resumen" && (
@@ -121,7 +122,7 @@ export function MainLayout() {
          </div>
          <RequestTimeOffModal />
 
-         <div className="flex-1 overflow-hidden relative">
+         <div className="flex-1 overflow-hidden relative bg-gray-50 dark:bg-[#0f111a]">
             {activeTab === "resumen" && <SummaryView />}
             {activeTab === "calendario" && <MainCalendarView />}
             {activeTab === "solicitudes" && <RequestsView />}
@@ -131,6 +132,7 @@ export function MainLayout() {
                </CriticalProductsProvider>
             )}
          </div>
+        </div>
       </div>
     </div>
   );
