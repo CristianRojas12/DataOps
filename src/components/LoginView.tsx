@@ -55,9 +55,11 @@ export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: 
     if (error) {
       setError(error.message);
     } else {
-      setSuccessMessage("¡Contraseña actualizada exitosamente!");
-      setTimeout(() => {
-        setRecoveryMode(false);
+      setSuccessMessage("¡Contraseña actualizada! Iniciá sesión con tu nueva contraseña.");
+      setTimeout(async () => {
+        await supabase.auth.signOut(); // cierra la sesión de recuperación
+        setRecoveryMode(false);        // SIGNED_OUT + esto → vuelve al login
+        setNewPassword("");
       }, 2000);
     }
     setLoading(false);
