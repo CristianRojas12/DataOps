@@ -6,43 +6,21 @@ import { Button } from "./ui/button";
 import { Label } from "./ui/label";
 import { Headphones, ChevronDown, ChevronUp, ArrowRight } from "lucide-react";
 
-export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: { recoveryMode?: boolean; setRecoveryMode?: (v: boolean) => void }) {
+export function LoginView({ setRecoveryMode = () => {} }: { recoveryMode?: boolean; setRecoveryMode?: (v: boolean) => void }) {
   const [helpOpen, setHelpOpen] = useState(false);
+  const [step, setStep] = useState<"login" | "reset">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [code, setCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isResetting, setIsResetting] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [newPassword, setNewPassword] = useState("");
 
-
-  const handleResetPassword = async () => {
+  // Paso 1: envía el código OTP de 6 dígitos al correo (el template usa {{ .Token }}).
+  const handleRequestCode = async () => {
     if (!email.trim()) {
-      setError("Por favor, ingresa tu correo electrónico primero para recuperar la contraseña.");
-      return;
-    }
-
-    setIsResetting(true);
-    setError(null);
-    setSuccessMessage(null);
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: 'https://cristianrojas12.github.io/DataOps/' });
-
-    if (error) {
-      setError(error.message);
-    } else {
-      setSuccessMessage("Te hemos enviado un correo con las instrucciones para restablecer tu contraseña.");
-    }
-
-    setIsResetting(false);
-  };
-
-
-  const handleUpdatePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPassword.trim()) {
-      setError("Por favor, ingresa una nueva contraseña.");
+      setError("Ingresá tu correo electrónico primero para recuperar la contraseña.");
       return;
     }
 
@@ -50,19 +28,73 @@ export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: 
     setError(null);
     setSuccessMessage(null);
 
-    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim());
 
     if (error) {
       setError(error.message);
     } else {
-      setSuccessMessage("¡Contraseña actualizada! Iniciá sesión con tu nueva contraseña.");
-      setTimeout(async () => {
-        await supabase.auth.signOut(); // cierra la sesión de recuperación
-        setRecoveryMode(false);        // SIGNED_OUT + esto → vuelve al login
-        setNewPassword("");
-      }, 2000);
+      // recoveryMode mantiene visible el LoginView cuando verifyOtp cree la sesión.
+      setRecoveryMode(true);
+      setStep("reset");
+      setSuccessMessage("Te enviamos un código de 6 dígitos a tu correo. Ingresalo abajo.");
     }
     setLoading(false);
+  };
+
+  // Paso 2: valida el código y fija la nueva contraseña; luego vuelve al login.
+  const handleVerifyAndUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (code.trim().length !== 6) {
+      setError("Ingresá el código de 6 dígitos que te llegó por correo.");
+      return;
+    }
+    if (!newPassword.trim()) {
+      setError("Ingresá una nueva contraseña.");
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+
+    const { error: vErr } = await supabase.auth.verifyOtp({
+      email: email.trim(),
+      token: code.trim(),
+      type: "recovery",
+    });
+    if (vErr) {
+      setError("El código es inválido o expiró. Pedí uno nuevo.");
+      setLoading(false);
+      return;
+    }
+
+    const { error: uErr } = await supabase.auth.updateUser({ password: newPassword });
+    if (uErr) {
+      setError("No se pudo actualizar la contraseña. Intentá de nuevo.");
+      setLoading(false);
+      return;
+    }
+
+    setSuccessMessage("¡Contraseña actualizada! Iniciá sesión con tu nueva contraseña.");
+    setTimeout(async () => {
+      await supabase.auth.signOut(); // cierra la sesión de recuperación
+      setRecoveryMode(false);
+      setStep("login");
+      setCode("");
+      setNewPassword("");
+      setPassword("");
+      setSuccessMessage(null);
+    }, 2000);
+    setLoading(false);
+  };
+
+  const backToLogin = () => {
+    setStep("login");
+    setRecoveryMode(false);
+    setError(null);
+    setSuccessMessage(null);
+    setCode("");
+    setNewPassword("");
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -70,10 +102,7 @@ export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: 
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
 
     if (error) {
       setError(error.message);
@@ -90,15 +119,33 @@ export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: 
         {/* Logo/Header AB InBev style */}
         <div className="mb-10 text-center space-y-6">
            <h1 className="text-5xl font-black tracking-tight text-black">DataOps</h1>
-           <h2 className="text-2xl font-medium text-black">{recoveryMode ? "Actualiza tu contraseña" : "Iniciá sesión"}</h2>
+           <h2 className="text-2xl font-medium text-black">{step === "reset" ? "Restablecer contraseña" : "Iniciá sesión"}</h2>
         </div>
 
         <Card className="w-full max-w-md bg-white dark:bg-[#1a1c29] border-gray-200 dark:border-gray-800 text-gray-900 dark:text-gray-100 shadow-md">
           <CardContent className="pt-6">
-            {recoveryMode ? (
-              <form onSubmit={handleUpdatePassword} className="space-y-6">
+            {step === "reset" ? (
+              <form onSubmit={handleVerifyAndUpdate} className="space-y-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Te enviamos un código de 6 dígitos a <span className="font-semibold">{email}</span>.
+                </p>
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword" className="font-semibold text-xs">Nueva Contraseña</Label>
+                  <Label htmlFor="code" className="font-semibold text-xs">Código de verificación</Label>
+                  <Input
+                    id="code"
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={6}
+                    autoComplete="one-time-code"
+                    placeholder="123456"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
+                    required
+                    className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 h-12 tracking-[0.4em] text-center text-lg"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword" className="font-semibold text-xs">Nueva contraseña</Label>
                   <Input
                     id="newPassword"
                     type="password"
@@ -114,13 +161,16 @@ export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: 
                 {successMessage && (
                   <div className="text-sm text-green-600 font-medium">{successMessage}</div>
                 )}
-                <div className="flex justify-end pt-2">
+                <div className="flex items-center justify-between pt-2">
+                   <button type="button" onClick={backToLogin} className="text-sm text-gray-600 hover:text-black hover:underline cursor-pointer dark:text-gray-400 dark:hover:text-white">
+                     Volver
+                   </button>
                    <Button
                      type="submit"
                      className="bg-black hover:bg-gray-900 text-white rounded-full pl-6 pr-2 h-12 w-auto font-semibold flex items-center gap-4"
                      disabled={loading}
                    >
-                     <span>{loading ? "Actualizando..." : "Actualizar"}</span>
+                     <span>{loading ? "Cambiando..." : "Cambiar contraseña"}</span>
                      <div className="w-8 h-8 rounded-full bg-[#FFE500] flex items-center justify-center">
                        <ArrowRight className="w-5 h-5 text-black" />
                      </div>
@@ -152,7 +202,7 @@ export function LoginView({ recoveryMode = false, setRecoveryMode = () => {} }: 
                   className="bg-white dark:bg-[#13151f] border-gray-200 dark:border-gray-800 h-12"
                 />
                 <div className="flex justify-end pt-1">
-                  <button type="button" onClick={handleResetPassword} disabled={isResetting} className="text-sm text-gray-600 hover:text-black hover:underline cursor-pointer dark:text-gray-400 dark:hover:text-white">
+                  <button type="button" onClick={handleRequestCode} disabled={loading} className="text-sm text-gray-600 hover:text-black hover:underline cursor-pointer dark:text-gray-400 dark:hover:text-white">
                     Olvidé mi contraseña
                   </button>
                 </div>
