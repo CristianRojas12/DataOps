@@ -337,7 +337,9 @@ export function GuardProvider({ children }: { children: React.ReactNode }) {
     return <LoadingSpinner />;
   }
 
-  if (!session.user) {
+  // recoveryMode tiene prioridad: el link del email crea una sesión, pero igual
+  // hay que mostrar el formulario de "nueva contraseña" en vez de entrar a la app.
+  if (!session.user || recoveryMode) {
     return <LoginView recoveryMode={recoveryMode} setRecoveryMode={setRecoveryMode} />;
   }
 
