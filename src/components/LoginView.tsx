@@ -36,7 +36,7 @@ export function LoginView({ setRecoveryMode = () => {} }: { recoveryMode?: boole
       // recoveryMode mantiene visible el LoginView cuando verifyOtp cree la sesión.
       setRecoveryMode(true);
       setStep("reset");
-      setSuccessMessage("Te enviamos un código de 6 dígitos a tu correo. Ingresalo abajo.");
+      setSuccessMessage("Te enviamos un código a tu correo. Ingresalo abajo.");
     }
     setLoading(false);
   };
@@ -44,8 +44,8 @@ export function LoginView({ setRecoveryMode = () => {} }: { recoveryMode?: boole
   // Paso 2: valida el código y fija la nueva contraseña; luego vuelve al login.
   const handleVerifyAndUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (code.trim().length !== 6) {
-      setError("Ingresá el código de 6 dígitos que te llegó por correo.");
+    if (code.trim().length < 6) {
+      setError("Ingresá el código que te llegó por correo.");
       return;
     }
     if (!newPassword.trim()) {
@@ -127,7 +127,7 @@ export function LoginView({ setRecoveryMode = () => {} }: { recoveryMode?: boole
             {step === "reset" ? (
               <form onSubmit={handleVerifyAndUpdate} className="space-y-6">
                 <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Te enviamos un código de 6 dígitos a <span className="font-semibold">{email}</span>.
+                  Te enviamos un código a <span className="font-semibold">{email}</span>.
                 </p>
                 <div className="space-y-2">
                   <Label htmlFor="code" className="font-semibold text-xs">Código de verificación</Label>
@@ -135,9 +135,9 @@ export function LoginView({ setRecoveryMode = () => {} }: { recoveryMode?: boole
                     id="code"
                     type="text"
                     inputMode="numeric"
-                    maxLength={6}
+                    maxLength={8}
                     autoComplete="one-time-code"
-                    placeholder="123456"
+                    placeholder="12345678"
                     value={code}
                     onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))}
                     required
