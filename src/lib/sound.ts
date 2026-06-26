@@ -20,6 +20,41 @@ export function primeAudio(): void {
   if (ctx && ctx.state === "suspended") ctx.resume().catch(() => {});
 }
 
+// Keep-alive: mantiene el AudioContext "running" mientras las alertas están
+// activas, para que el "tilín" pueda sonar con la pestaña en segundo plano
+// (los navegadores suspenden el audio de tabs ocultas). Un oscilador a ganancia
+// inaudible conectado al destination evita que el contexto se suspenda.
+// Debe arrancarse desde un gesto del usuario (toggle de alertas).
+let keepAliveOsc: OscillatorNode | null = null;
+let keepAliveGain: GainNode | null = null;
+
+export function startAudioKeepAlive(): void {
+  const ctx = getCtx();
+  if (!ctx || keepAliveOsc) return;
+  if (ctx.state === "suspended") ctx.resume().catch(() => {});
+
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  gain.gain.value = 0.0001; // prácticamente inaudible, pero mantiene el ctx vivo
+  osc.frequency.value = 440;
+  osc.connect(gain).connect(ctx.destination);
+  osc.start();
+  keepAliveOsc = osc;
+  keepAliveGain = gain;
+}
+
+export function stopAudioKeepAlive(): void {
+  try {
+    keepAliveOsc?.stop();
+    keepAliveOsc?.disconnect();
+    keepAliveGain?.disconnect();
+  } catch {
+    /* ya estaba detenido */
+  }
+  keepAliveOsc = null;
+  keepAliveGain = null;
+}
+
 // Reproduce el "tilín": dos notas sine cortas con envolvente suave (sin clicks).
 // volume: 0..1 (default 0.6). El pico real se escala desde este valor.
 export function playNotificationChime(volume = 0.6): void {

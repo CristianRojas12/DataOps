@@ -5,7 +5,7 @@ import { useUiStore } from "../store";
 import { useGuardContext } from "../context";
 import { SHIFTS } from "../productsTypes";
 import type { ProductsShiftFilter } from "../store";
-import { primeAudio, playNotificationChime } from "../lib/sound";
+import { primeAudio, playNotificationChime, startAudioKeepAlive, stopAudioKeepAlive } from "../lib/sound";
 
 function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
@@ -41,16 +41,31 @@ export function CriticalProductsControls() {
     setProductsShiftFilter(myGuard ? myGuard.type : "all");
   }, [guards, session.memberId, productsShiftFilter, setProductsShiftFilter]);
 
+  // Si las alertas ya venían activas (persistidas), el keep-alive de audio no se
+  // puede arrancar sin un gesto del usuario. Lo enganchamos al primer gesto.
+  useEffect(() => {
+    if (!productsAlertsEnabled) return;
+    const onFirstGesture = () => {
+      primeAudio();
+      startAudioKeepAlive();
+    };
+    window.addEventListener("pointerdown", onFirstGesture, { once: true });
+    return () => window.removeEventListener("pointerdown", onFirstGesture);
+  }, [productsAlertsEnabled]);
+
   const toggleAlerts = (checked: boolean) => {
     setProductsAlertsEnabled(checked);
     if (checked) {
-      // Gesto del usuario: desbloquea el audio y reproduce el "tilín" como
-      // confirmación de que el sonido quedó activo.
+      // Gesto del usuario: desbloquea el audio, lo mantiene vivo en segundo plano
+      // y reproduce el "tilín" como confirmación de que el sonido quedó activo.
       primeAudio();
+      startAudioKeepAlive();
       playNotificationChime(productsAlertVolume);
       if ("Notification" in window && Notification.permission === "default") {
         Notification.requestPermission();
       }
+    } else {
+      stopAudioKeepAlive();
     }
   };
 
