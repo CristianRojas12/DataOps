@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from "rea
 import type { ReactNode } from "react";
 import { format } from "date-fns";
 import { supabase } from "./lib/supabase";
-import type { CriticalProduct, CriticalProductInput } from "./productsTypes";
+import type { CriticalProduct, CriticalProductInput, ProductArch } from "./productsTypes";
 
 const POLL_MS = 30_000;
 
@@ -10,24 +10,24 @@ function todayStr(): string {
   return format(new Date(), "yyyy-MM-dd");
 }
 
-function doneKey(productId: string, time: string): string {
-  return `${productId}|${time}`;
+function doneKey(productId: string, time: string, arch: ProductArch): string {
+  return `${productId}|${time}|${arch}`;
 }
 
 interface ProductsContextType {
   products: CriticalProduct[];
-  doneKeys: Set<string>; // claves "productId|HH:MM" hechas hoy
+  doneKeys: Set<string>; // claves "productId|HH:MM|arch" hechas hoy
   holidayProductsByDay: Record<string, Set<string>>; // "yyyy-MM-dd" -> set de product_id que corren ese feriado
-  notesByKey: Record<string, string>; // "productId|HH:MM" -> anotación permanente del horario
+  notesByKey: Record<string, string>; // "productId|HH:MM|arch" -> anotación permanente del carril
   isLoading: boolean;
   refresh: () => Promise<void>;
   addProduct: (data: CriticalProductInput) => Promise<void>;
   updateProduct: (id: string, data: CriticalProductInput) => Promise<void>;
   removeProduct: (id: string) => Promise<void>;
-  markDone: (productId: string, time: string) => Promise<void>;
-  unmarkDone: (productId: string, time: string) => Promise<void>;
+  markDone: (productId: string, time: string, arch: ProductArch) => Promise<void>;
+  unmarkDone: (productId: string, time: string, arch: ProductArch) => Promise<void>;
   setHolidayProducts: (day: string, productIds: string[]) => Promise<void>;
-  setNote: (productId: string, time: string, note: string) => Promise<void>;
+  setNote: (productId: string, time: string, arch: ProductArch, note: string) => Promise<void>;
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined);
@@ -42,9 +42,9 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
   const refresh = useCallback(async () => {
     const [prodRes, doneRes, holRes, notesRes] = await Promise.all([
       supabase.from("critical_products").select("*").order("name"),
-      supabase.from("product_done").select("product_id, time").eq("day", todayStr()),
+      supabase.from("product_done").select("product_id, time, arch").eq("day", todayStr()),
       supabase.from("critical_product_holidays").select("product_id, day").gte("day", todayStr()),
-      supabase.from("product_notes").select("product_id, time, note"),
+      supabase.from("product_notes").select("product_id, time, arch, note"),
     ]);
 
     if (prodRes.error) console.error("Error fetching critical_products:", prodRes.error);
@@ -52,14 +52,17 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
       setProducts(
         (prodRes.data ?? []).map((p: any) => ({
           ...p,
-          links: Array.isArray(p.links) ? p.links : [],
+          links: (Array.isArray(p.links) ? p.links : []).map((l: any) => ({
+            ...l,
+            arch: l?.arch === "4.0" ? "4.0" : "1.0", // normaliza links legados sin arch
+          })),
           days: Array.isArray(p.days) ? p.days : [1, 2, 3, 4, 5],
           shift: p.shift === "Guardia Vespertina" ? "Guardia Vespertina" : "Guardia Matutina",
         })) as CriticalProduct[],
       );
 
     if (doneRes.error) console.error("Error fetching product_done:", doneRes.error);
-    else setDoneKeys(new Set((doneRes.data ?? []).map((d: any) => doneKey(d.product_id, d.time))));
+    else setDoneKeys(new Set((doneRes.data ?? []).map((d: any) => doneKey(d.product_id, d.time, d.arch === "4.0" ? "4.0" : "1.0"))));
 
     if (holRes.error) console.error("Error fetching critical_product_holidays:", holRes.error);
     else {
@@ -74,7 +77,7 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
     else {
       const byKey: Record<string, string> = {};
       for (const r of (notesRes.data ?? []) as any[]) {
-        if (r.note) byKey[doneKey(r.product_id, r.time)] = r.note;
+        if (r.note) byKey[doneKey(r.product_id, r.time, r.arch === "4.0" ? "4.0" : "1.0")] = r.note;
       }
       setNotesByKey(byKey);
     }
@@ -108,19 +111,19 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
     setProducts((prev) => prev.filter((p) => p.id !== id));
   };
 
-  const markDone = async (productId: string, time: string) => {
-    setDoneKeys((prev) => new Set(prev).add(doneKey(productId, time))); // optimista
+  const markDone = async (productId: string, time: string, arch: ProductArch) => {
+    setDoneKeys((prev) => new Set(prev).add(doneKey(productId, time, arch))); // optimista
     const { error } = await supabase
       .from("product_done")
-      .insert([{ product_id: productId, time, day: todayStr() }]);
+      .insert([{ product_id: productId, time, arch, day: todayStr() }]);
     // 23505 = unique_violation → ya estaba marcado por otra persona; no es error real.
     if (error && (error as any).code !== "23505") console.error("Error marking done", error);
   };
 
-  const unmarkDone = async (productId: string, time: string) => {
+  const unmarkDone = async (productId: string, time: string, arch: ProductArch) => {
     setDoneKeys((prev) => {
       const next = new Set(prev);
-      next.delete(doneKey(productId, time));
+      next.delete(doneKey(productId, time, arch));
       return next;
     });
     const { error } = await supabase
@@ -128,6 +131,7 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
       .delete()
       .eq("product_id", productId)
       .eq("time", time)
+      .eq("arch", arch)
       .eq("day", todayStr());
     if (error) console.error("Error unmarking done", error);
   };
@@ -144,22 +148,22 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
     await refresh();
   };
 
-  // Anotación permanente por (producto, horario). Upsert; vacío = borra la fila.
-  const setNote = async (productId: string, time: string, note: string) => {
+  // Anotación permanente por (producto, horario, arquitectura). Upsert; vacío = borra la fila.
+  const setNote = async (productId: string, time: string, arch: ProductArch, note: string) => {
     const trimmed = note.trim();
-    const key = doneKey(productId, time);
+    const key = doneKey(productId, time, arch);
     setNotesByKey((prev) => {
       const next = { ...prev };
       if (trimmed) next[key] = trimmed; else delete next[key];
       return next;
     });
     if (!trimmed) {
-      const { error } = await supabase.from("product_notes").delete().eq("product_id", productId).eq("time", time);
+      const { error } = await supabase.from("product_notes").delete().eq("product_id", productId).eq("time", time).eq("arch", arch);
       if (error) console.error("Error deleting note", error);
     } else {
       const { error } = await supabase
         .from("product_notes")
-        .upsert({ product_id: productId, time, note: trimmed }, { onConflict: "product_id,time" });
+        .upsert({ product_id: productId, time, arch, note: trimmed }, { onConflict: "product_id,time,arch" });
       if (error) console.error("Error saving note", error);
     }
   };

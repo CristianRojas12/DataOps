@@ -6,10 +6,14 @@ import type { GuardType } from "./types";
 //  - "powerbi":    copia la URL al portapapeles (botón azul 📊).
 export type ProductLinkKind = "databricks" | "powerbi";
 
+// Arquitectura a la que pertenece un link. Define en qué carril del board aparece.
+export type ProductArch = "1.0" | "4.0";
+
 export interface ProductLink {
   label: string; // nombre visible en el botón (ej: "Link 1", "PBI Ventas")
   url: string;
   kind: ProductLinkKind;
+  arch: ProductArch; // carril (arquitectura) en el que se muestra. Default "1.0"
 }
 
 export interface CriticalProduct {
@@ -30,6 +34,11 @@ export const SHIFTS: ReadonlyArray<{ value: GuardType; label: string }> = [
 ];
 
 export const DEFAULT_SHIFT: GuardType = "Guardia Matutina";
+
+// Arquitecturas disponibles. El orden define el orden de los carriles en el board.
+export const ARCHITECTURES: ProductArch[] = ["1.0", "4.0"];
+
+export const DEFAULT_ARCH: ProductArch = "1.0";
 
 // Días de la semana en orden Lun→Dom para los botones del formulario.
 export const WEEKDAYS: ReadonlyArray<{ value: number; label: string }> = [

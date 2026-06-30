@@ -3,8 +3,8 @@ import { format } from "date-fns";
 
 import { useProductsContext } from "../productsContext";
 import { useProductNotifications } from "../hooks/useProductNotifications";
-import type { CriticalProduct, ProductTask } from "../productsTypes";
-import { WEEKDAYS, DEFAULT_SHIFT, SHIFTS } from "../productsTypes";
+import type { CriticalProduct, ProductArch } from "../productsTypes";
+import { WEEKDAYS, DEFAULT_SHIFT, SHIFTS, ARCHITECTURES } from "../productsTypes";
 import { ProductFormModal } from "./ProductFormModal";
 import { HolidayScheduleModal } from "./HolidayScheduleModal";
 import { LoadingSpinner } from "./LoadingSpinner";
@@ -16,11 +16,10 @@ function hm(d: Date): string {
   return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 }
 
-// Hora · Producto · Canal Teams (más angosto) · Notas · Estado · Acciones
-const ROW_GRID = "60px 150px minmax(150px,0.7fr) minmax(200px,1fr) 100px minmax(360px,1.4fr)";
+const archOf = (link: { arch?: ProductArch }): ProductArch => (link.arch === "4.0" ? "4.0" : "1.0");
 
-// Celda de anotación permanente por horario. Estado local para no perder lo que se
-// está tipeando cuando el poll/reloj re-renderiza; sincroniza desde el server solo
+// Celda de anotación permanente por carril (producto, horario, arquitectura). Estado local para no
+// perder lo que se está tipeando cuando el poll/reloj re-renderiza; sincroniza desde el server solo
 // cuando el campo no está enfocado. Guarda en blur si cambió.
 function NoteCell({ value, onSave }: { value: string; onSave: (note: string) => void }) {
   const [text, setText] = useState(value);
@@ -34,7 +33,7 @@ function NoteCell({ value, onSave }: { value: string; onSave: (note: string) => 
       onBlur={() => { setFocused(false); if (text !== value) onSave(text); }}
       placeholder="Agregar nota…"
       title={text || "Agregar nota"}
-      className="w-full h-8 rounded-md bg-white/70 border border-gray-200 px-2 text-xs text-gray-900 placeholder:text-gray-400 dark:bg-[#13151f]/70 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500"
+      className="w-full h-8 rounded-md bg-white/70 border border-gray-200 px-2 text-xs text-gray-900 placeholder:text-gray-400 dark:bg-[#0f111a]/70 dark:border-gray-700 dark:text-gray-100 dark:placeholder:text-gray-500"
     />
   );
 }
@@ -103,17 +102,20 @@ export function CriticalProductsView() {
   // Las alertas (notificación + tilín) respetan el filtro: solo avisan de lo visible.
   useProductNotifications(visibleProducts, productsAlertsEnabled, productsAlertVolume);
 
-  const tasks = useMemo<ProductTask[]>(() => {
-    const list: ProductTask[] = [];
+  // Una tarjeta por (producto, horario), ordenadas por hora.
+  const cards = useMemo(() => {
+    const list: { product: CriticalProduct; time: string }[] = [];
     for (const p of visibleProducts) {
-      for (const t of p.schedules ?? []) {
-        list.push({ product: p, time: t, done: doneKeys.has(`${p.id}|${t}`) });
-      }
+      for (const t of p.schedules ?? []) list.push({ product: p, time: t });
     }
-    return list.sort((a, b) => a.time.localeCompare(b.time));
-  }, [visibleProducts, doneKeys]);
+    return list.sort((a, b) => a.time.localeCompare(b.time) || a.product.name.localeCompare(b.product.name));
+  }, [visibleProducts]);
 
   const cur = hm(now);
+
+  // Arquitecturas presentes en un producto (carriles a renderizar, en orden).
+  const lanesFor = (p: CriticalProduct): ProductArch[] =>
+    ARCHITECTURES.filter((a) => (p.links ?? []).some((l) => archOf(l) === a));
 
   const openEdit = (p: CriticalProduct) => { setEditing(p); setProductsAddModalOpen(true); };
 
@@ -164,87 +166,126 @@ export function CriticalProductsView() {
           </div>
         )}
 
-        {tasks.length === 0 ? (
+        {cards.length === 0 ? (
           <p className="text-gray-500 dark:text-gray-400 text-center py-16">
             No hay productos configurados. Hacé clic en "+ Agregar producto".
           </p>
         ) : (
           <>
-            {/* Encabezado de columnas */}
-            <div
-              className="grid items-center gap-3 px-4 py-2 text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400 dark:text-gray-400"
-              style={{ gridTemplateColumns: ROW_GRID }}
-            >
-              <div>Hora</div>
-              <div>Producto</div>
-              <div>Canal Teams</div>
-              <div>Notas</div>
-              <div>Estado</div>
-              <div className="text-right">Acciones</div>
-            </div>
-
-            <div className="space-y-1.5">
-              {tasks.map((task) => {
-                const past = task.time < cur && !task.done;
-                const bgClass = task.done ? "bg-[#d1fae5] dark:bg-[#064e3b]" : past ? "bg-[#fee2e2] dark:bg-[#7f1d1d]" : "bg-[#f1f5f9] dark:bg-[#13151f]";
-                const key = `${task.product.id}|${task.time}`;
+            <div className="space-y-3">
+              {cards.map(({ product: p, time }) => {
+                const lanes = lanesFor(p);
+                const cardKey = `${p.id}|${time}`;
+                const allDone = lanes.length > 0 && lanes.every((a) => doneKeys.has(`${cardKey}|${a}`));
+                const completeAll = () => {
+                  for (const a of lanes) {
+                    if (!doneKeys.has(`${cardKey}|${a}`)) markDone(p.id, time, a);
+                  }
+                };
                 return (
-                  <div
-                    key={key}
-                    className={`grid items-center gap-3 px-4 py-3 rounded-lg transition-all hover:brightness-125 hover:ring-2 hover:ring-white/40 ${bgClass}`}
-                    style={{ gridTemplateColumns: ROW_GRID }}
-                  >
-                    <div className="font-bold text-sm text-gray-900 dark:text-gray-100">{task.time}</div>
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{task.product.name}</div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400">{task.product.teams_channel || "—"}</div>
-                    <div>
-                      <NoteCell value={notesByKey[key] ?? ""} onSave={(v) => setNote(task.product.id, task.time, v)} />
-                    </div>
-                    <div className="text-xs font-medium">
-                      {task.done ? (
-                        <span className="text-emerald-700">✓ Listo</span>
-                      ) : past ? (
-                        <span className="text-red-600">⚠ Pendiente</span>
+                  <div key={cardKey} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1c29] shadow-sm overflow-hidden">
+                    {/* Encabezado de la tarjeta */}
+                    <div className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="font-mono text-sm font-bold tabular-nums rounded-md bg-gray-100 dark:bg-[#0f111a] px-2 py-1 text-gray-900 dark:text-gray-100">
+                          {time}
+                        </span>
+                        <span className="font-semibold text-gray-900 dark:text-gray-100 truncate">{p.name}</span>
+                        {p.teams_channel && (
+                          <span className="text-xs text-blue-600 dark:text-blue-400 truncate hidden sm:inline">· {p.teams_channel}</span>
+                        )}
+                        {lanes.length === 1 && (
+                          <span className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-[#0f111a] text-gray-600 dark:text-gray-400">
+                            Solo {lanes[0]}
+                          </span>
+                        )}
+                      </div>
+                      {allDone ? (
+                        <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400 shrink-0">✓ Completo</span>
                       ) : (
-                        <span className="text-blue-600 dark:text-blue-400">Próximo</span>
+                        <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900 shrink-0" onClick={completeAll}>
+                          ✓ {lanes.length > 1 ? "Completar ambos" : "Completar"}
+                        </Button>
                       )}
                     </div>
-                    <div className="flex flex-wrap items-center justify-end gap-2">
-                      {(task.product.links ?? []).map((link, li) => {
-                        const linkKey = `${key}|${li}`;
-                        if (link.kind === "powerbi") {
-                          return (
-                            <Button
-                              key={li}
-                              size="sm"
-                              className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-white"
-                              onClick={() => copyPbi(link.url, linkKey)}
-                            >
-                              {copiedKey === linkKey ? "✓ Copiado" : `📊 ${link.label}`}
-                            </Button>
-                          );
-                        }
+
+                    {/* Carriles por arquitectura */}
+                    <div className="px-3 pb-3 space-y-2">
+                      {lanes.map((a) => {
+                        const laneKey = `${cardKey}|${a}`;
+                        const done = doneKeys.has(laneKey);
+                        const past = time < cur && !done;
+                        const links = (p.links ?? []).filter((l) => archOf(l) === a);
+                        const bgClass = done
+                          ? "bg-[#d1fae5] dark:bg-[#064e3b] border-emerald-500"
+                          : past
+                          ? "bg-[#fee2e2] dark:bg-[#7f1d1d] border-red-500"
+                          : "bg-[#f1f5f9] dark:bg-[#13151f] border-blue-400 dark:border-blue-500";
                         return (
-                          <Button
-                            key={li}
-                            size="sm"
-                            variant="secondary"
-                            className="h-8"
-                            onClick={() => window.open(link.url, "_blank")}
-                          >
-                            {link.label}
-                          </Button>
+                          <div key={a} className={`flex items-center gap-3 rounded-md border-l-4 px-3 py-2.5 ${bgClass}`}>
+                            {/* Marcador de arquitectura */}
+                            <div className="w-[110px] shrink-0">
+                              <div className="text-lg font-bold leading-none text-gray-900 dark:text-gray-100">{a}</div>
+                              <div className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">Arquitectura</div>
+                            </div>
+                            {/* Nota del carril */}
+                            <div className="flex-1 min-w-0">
+                              <NoteCell value={notesByKey[laneKey] ?? ""} onSave={(v) => setNote(p.id, time, a, v)} />
+                            </div>
+                            {/* Links de la arquitectura */}
+                            <div className="flex flex-wrap items-center justify-end gap-2 shrink-0">
+                              {links.map((link, li) => {
+                                const linkKey = `${laneKey}|${li}`;
+                                if (link.kind === "powerbi") {
+                                  return (
+                                    <Button
+                                      key={li}
+                                      size="sm"
+                                      className="h-8 bg-[#1a3050] hover:bg-[#2a4878] text-white"
+                                      onClick={() => copyPbi(link.url, linkKey)}
+                                    >
+                                      {copiedKey === linkKey ? "✓ Copiado" : `📊 ${link.label}`}
+                                    </Button>
+                                  );
+                                }
+                                return (
+                                  <Button
+                                    key={li}
+                                    size="sm"
+                                    variant="secondary"
+                                    className="h-8"
+                                    onClick={() => window.open(link.url, "_blank")}
+                                  >
+                                    {link.label}
+                                  </Button>
+                                );
+                              })}
+                            </div>
+                            {/* Estado */}
+                            <div className="w-[84px] text-xs font-medium text-right shrink-0">
+                              {done ? (
+                                <span className="text-emerald-700 dark:text-emerald-400">✓ Listo</span>
+                              ) : past ? (
+                                <span className="text-red-600 dark:text-red-400">⚠ Pendiente</span>
+                              ) : (
+                                <span className="text-blue-600 dark:text-blue-400">Próximo</span>
+                              )}
+                            </div>
+                            {/* Acción */}
+                            <div className="shrink-0">
+                              {done ? (
+                                <Button size="sm" variant="outline" className="h-8 bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#1f2233]" title="Desmarcar" onClick={() => unmarkDone(p.id, time, a)}>
+                                  ↩
+                                </Button>
+                              ) : (
+                                <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={() => markDone(p.id, time, a)}>
+                                  Listo
+                                </Button>
+                              )}
+                            </div>
+                          </div>
                         );
                       })}
-                      {task.done ? (
-                        <Button size="sm" variant="outline" className="h-8 bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#1f2233]" title="Desmarcar" onClick={() => unmarkDone(task.product.id, task.time)}>
-                          ↩
-                        </Button>
-                      ) : (
-                        <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900 dark:text-gray-100" onClick={() => markDone(task.product.id, task.time)}>
-                          Listo
-                        </Button>
-                      )}
                     </div>
                   </div>
                 );
@@ -267,6 +308,11 @@ export function CriticalProductsView() {
                           >
                             {SHIFTS.find((s) => s.value === (p.shift ?? DEFAULT_SHIFT))?.label ?? "Matutina"}
                           </span>
+                          {lanesFor(p).map((a) => (
+                            <span key={a} className="text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded-full bg-gray-200 dark:bg-[#0f111a] text-gray-600 dark:text-gray-400">
+                              {a}
+                            </span>
+                          ))}
                         </div>
                         <div className="text-xs text-muted-foreground">
                           Días: {WEEKDAYS.filter((d) => (p.days ?? []).includes(d.value)).map((d) => d.label).join(" · ") || "Sin días"}

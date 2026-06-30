@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 
 import { useProductsContext } from "../productsContext";
-import type { CriticalProduct, ProductLink, ProductLinkKind } from "../productsTypes";
-import { WEEKDAYS, DEFAULT_DAYS, SHIFTS, DEFAULT_SHIFT } from "../productsTypes";
+import type { CriticalProduct, ProductLink, ProductLinkKind, ProductArch } from "../productsTypes";
+import { WEEKDAYS, DEFAULT_DAYS, SHIFTS, DEFAULT_SHIFT, ARCHITECTURES, DEFAULT_ARCH } from "../productsTypes";
 import type { GuardType } from "../types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,7 +36,7 @@ function normalizeSchedules(rawList: string[]): { ok: true; value: string[] } | 
 }
 
 function emptyLink(label: string): ProductLink {
-  return { label, url: "", kind: "databricks" };
+  return { label, url: "", kind: "databricks", arch: DEFAULT_ARCH };
 }
 
 export function ProductFormModal({ open, onOpenChange, product }: Props) {
@@ -96,7 +96,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
       const label = (l.label ?? "").trim();
       if (!url) continue;
       if (!label) { setError("Cada link necesita un nombre."); return; }
-      cleanLinks.push({ label, url, kind: l.kind });
+      cleanLinks.push({ label, url, kind: l.kind, arch: l.arch ?? DEFAULT_ARCH });
     }
     if (cleanLinks.length === 0) { setError("Agregá al menos un link con su URL."); return; }
 
@@ -163,6 +163,7 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
             <Label>Links</Label>
             <p className="text-xs text-muted-foreground">
               "Databricks" abre la URL en una pestaña nueva; "Power BI" la copia al portapapeles.
+              El tag 1.0 / 4.0 define en qué carril del board aparece el link.
             </p>
             <div className="space-y-2">
               {links.map((l, i) => (
@@ -186,6 +187,16 @@ export function ProductFormModal({ open, onOpenChange, product }: Props) {
                   >
                     <option value="databricks">Databricks</option>
                     <option value="powerbi">Power BI</option>
+                  </select>
+                  <select
+                    value={l.arch ?? DEFAULT_ARCH}
+                    onChange={(e) => setLinkAt(i, { arch: e.target.value as ProductArch })}
+                    title="Arquitectura (carril)"
+                    className="h-9 shrink-0 rounded-md bg-white dark:bg-[#13151f] border border-gray-200 dark:border-gray-800 px-2 text-sm text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-[#FFE500] focus:border-transparent focus:outline-none dark:focus:ring-gray-700"
+                  >
+                    {ARCHITECTURES.map((a) => (
+                      <option key={a} value={a}>{a}</option>
+                    ))}
                   </select>
                   <div className="flex shrink-0 flex-col">
                     <button
