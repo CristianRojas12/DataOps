@@ -83,26 +83,52 @@ UPDATE public.critical_products p
 SET links = COALESCE((
     SELECT jsonb_agg(elem ORDER BY ord)
     FROM (
-        SELECT 1 AS ord, jsonb_build_object('label', 'Link 1', 'url', p.url, 'kind', 'databricks') AS elem
+        SELECT 1 AS ord, jsonb_build_object('label', 'Link 1', 'url', p.url, 'kind', 'databricks', 'arch', '1.0') AS elem
           WHERE p.url IS NOT NULL AND p.url <> ''
         UNION ALL
-        SELECT 2, jsonb_build_object('label', 'Link 2', 'url', p.url2, 'kind', 'databricks')
+        SELECT 2, jsonb_build_object('label', 'Link 2', 'url', p.url2, 'kind', 'databricks', 'arch', '1.0')
           WHERE p.url2 IS NOT NULL AND p.url2 <> ''
         UNION ALL
-        SELECT 3, jsonb_build_object('label', 'PBI', 'url', p.powerbi_url, 'kind', 'powerbi')
+        SELECT 3, jsonb_build_object('label', 'PBI', 'url', p.powerbi_url, 'kind', 'powerbi', 'arch', '1.0')
           WHERE p.powerbi_url IS NOT NULL AND p.powerbi_url <> ''
     ) sub
 ), '[]'::jsonb)
 WHERE p.links = '[]'::jsonb;
 
--- Marcas de "Listo" compartidas. Una fila por (producto, horario, día).
+-- Migración: cada link existente suma el tag de arquitectura "arch" (default "1.0") si no lo tiene.
+-- Idempotente: solo agrega la clave a los objetos que aún no la tienen.
+UPDATE public.critical_products p
+SET links = (
+    SELECT jsonb_agg(
+        CASE WHEN elem ? 'arch' THEN elem ELSE elem || jsonb_build_object('arch', '1.0') END
+        ORDER BY ord
+    )
+    FROM jsonb_array_elements(p.links) WITH ORDINALITY AS t(elem, ord)
+)
+WHERE jsonb_typeof(p.links) = 'array'
+  AND jsonb_array_length(p.links) > 0
+  AND EXISTS (
+      SELECT 1 FROM jsonb_array_elements(p.links) e WHERE NOT (e ? 'arch')
+  );
+
+-- Marcas de "Listo" compartidas. Una fila por (producto, horario, día, arquitectura).
 CREATE TABLE IF NOT EXISTS public.product_done (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     product_id uuid NOT NULL REFERENCES public.critical_products(id) ON DELETE CASCADE,
     time text NOT NULL,
     day date NOT NULL,
-    UNIQUE (product_id, time, day)
+    -- Arquitectura (carril) que se completó. Default "1.0" para filas legadas.
+    arch text NOT NULL DEFAULT '1.0' CHECK (arch IN ('1.0', '4.0')),
+    UNIQUE (product_id, time, day, arch)
 );
+
+-- Migración para bases existentes: agrega "arch" y rehace el unique para incluirla.
+ALTER TABLE public.product_done
+    ADD COLUMN IF NOT EXISTS arch text NOT NULL DEFAULT '1.0';
+ALTER TABLE public.product_done DROP CONSTRAINT IF EXISTS product_done_product_id_time_day_key;
+ALTER TABLE public.product_done DROP CONSTRAINT IF EXISTS product_done_product_id_time_day_arch_key;
+ALTER TABLE public.product_done
+    ADD CONSTRAINT product_done_product_id_time_day_arch_key UNIQUE (product_id, time, day, arch);
 
 -- Programación de feriados: qué productos críticos ejecutan en una fecha de feriado
 -- puntual. Una fila por (producto, fecha). dim_calendario sigue siendo la fuente de
@@ -114,14 +140,24 @@ CREATE TABLE IF NOT EXISTS public.critical_product_holidays (
     UNIQUE (product_id, day)
 );
 
--- Anotaciones permanentes por horario. Una fila por (producto, horario), compartida.
+-- Anotaciones permanentes por carril. Una fila por (producto, horario, arquitectura), compartida.
 CREATE TABLE IF NOT EXISTS public.product_notes (
     id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
     product_id uuid NOT NULL REFERENCES public.critical_products(id) ON DELETE CASCADE,
     time text NOT NULL,
+    -- Arquitectura (carril) a la que pertenece la nota. Default "1.0" para filas legadas.
+    arch text NOT NULL DEFAULT '1.0' CHECK (arch IN ('1.0', '4.0')),
     note text NOT NULL DEFAULT '',
-    UNIQUE (product_id, time)
+    UNIQUE (product_id, time, arch)
 );
+
+-- Migración para bases existentes: agrega "arch" y rehace el unique para incluirla.
+ALTER TABLE public.product_notes
+    ADD COLUMN IF NOT EXISTS arch text NOT NULL DEFAULT '1.0';
+ALTER TABLE public.product_notes DROP CONSTRAINT IF EXISTS product_notes_product_id_time_key;
+ALTER TABLE public.product_notes DROP CONSTRAINT IF EXISTS product_notes_product_id_time_arch_key;
+ALTER TABLE public.product_notes
+    ADD CONSTRAINT product_notes_product_id_time_arch_key UNIQUE (product_id, time, arch);
 
 ALTER TABLE public.critical_products ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.product_done ENABLE ROW LEVEL SECURITY;
