@@ -48,6 +48,8 @@ export function CriticalProductsView() {
   const [editing, setEditing] = useState<CriticalProduct | null>(null);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [holidayModal, setHolidayModal] = useState<{ day: string; name: string } | null>(null);
+  // Tarjetas completadas re-expandidas manualmente (por defecto se colapsan al estar completas).
+  const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
 
   // Reloj para recalcular estados (próximo/pendiente) y reflejar la hora.
   useEffect(() => {
@@ -197,6 +199,15 @@ export function CriticalProductsView() {
                   (t) => t > cur && !hiddenKeys.has(`${p.id}|${t}`) && !isTimeDone(p, t),
                 );
                 const hiddenCount = (p.schedules ?? []).filter((t) => hiddenKeys.has(`${p.id}|${t}`)).length;
+                // Al completar, los carriles se colapsan; se pueden re-expandir para deshacer el estado.
+                const collapsed = allDone && !expandedCards.has(cardKey);
+                const toggleExpanded = () =>
+                  setExpandedCards((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(cardKey)) next.delete(cardKey);
+                    else next.add(cardKey);
+                    return next;
+                  });
                 return (
                   <div key={cardKey} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1c29] shadow-sm overflow-hidden">
                     {/* Encabezado de la tarjeta */}
@@ -239,7 +250,18 @@ export function CriticalProductsView() {
                           </Button>
                         )}
                         {allDone ? (
-                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">✓ Completo</span>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-8 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-[#1f2233]"
+                              title={collapsed ? "Ver carriles" : "Colapsar carriles"}
+                              onClick={toggleExpanded}
+                            >
+                              {collapsed ? `▸ Ver carriles (${lanes.length})` : "▾ Ocultar carriles"}
+                            </Button>
+                            <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">✓ Completo</span>
+                          </>
                         ) : (
                           <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={completeAll}>
                             ✓ {lanes.length > 1 ? "Completar ambos" : "Completar"}
@@ -248,7 +270,8 @@ export function CriticalProductsView() {
                       </div>
                     </div>
 
-                    {/* Carriles por arquitectura */}
+                    {/* Carriles por arquitectura (se colapsan cuando la tarjeta está completa) */}
+                    {!collapsed && (
                     <div className="px-3 pb-3 space-y-2">
                       {lanes.map((a) => {
                         const laneKey = `${cardKey}|${a}`;
@@ -326,6 +349,7 @@ export function CriticalProductsView() {
                         );
                       })}
                     </div>
+                    )}
                   </div>
                 );
               })}
