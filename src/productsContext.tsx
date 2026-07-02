@@ -14,9 +14,15 @@ function doneKey(productId: string, time: string, arch: ProductArch): string {
   return `${productId}|${time}|${arch}`;
 }
 
+// Clave de ocultamiento a nivel horario (sin arquitectura): oculta la tarjeta entera.
+function hiddenKey(productId: string, time: string): string {
+  return `${productId}|${time}`;
+}
+
 interface ProductsContextType {
   products: CriticalProduct[];
   doneKeys: Set<string>; // claves "productId|HH:MM|arch" hechas hoy
+  hiddenKeys: Set<string>; // claves "productId|HH:MM" de corridas ocultas hoy
   holidayProductsByDay: Record<string, Set<string>>; // "yyyy-MM-dd" -> set de product_id que corren ese feriado
   notesByKey: Record<string, string>; // "productId|HH:MM|arch" -> anotación permanente del carril
   isLoading: boolean;
@@ -26,6 +32,8 @@ interface ProductsContextType {
   removeProduct: (id: string) => Promise<void>;
   markDone: (productId: string, time: string, arch: ProductArch) => Promise<void>;
   unmarkDone: (productId: string, time: string, arch: ProductArch) => Promise<void>;
+  hideFutureRuns: (productId: string, times: string[]) => Promise<void>;
+  showRuns: (productId: string) => Promise<void>;
   setHolidayProducts: (day: string, productIds: string[]) => Promise<void>;
   setNote: (productId: string, time: string, arch: ProductArch, note: string) => Promise<void>;
 }
@@ -35,14 +43,16 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 export function CriticalProductsProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<CriticalProduct[]>([]);
   const [doneKeys, setDoneKeys] = useState<Set<string>>(new Set());
+  const [hiddenKeys, setHiddenKeys] = useState<Set<string>>(new Set());
   const [holidayProductsByDay, setHolidayProductsByDay] = useState<Record<string, Set<string>>>({});
   const [notesByKey, setNotesByKey] = useState<Record<string, string>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   const refresh = useCallback(async () => {
-    const [prodRes, doneRes, holRes, notesRes] = await Promise.all([
+    const [prodRes, doneRes, hiddenRes, holRes, notesRes] = await Promise.all([
       supabase.from("critical_products").select("*").order("name"),
       supabase.from("product_done").select("product_id, time, arch").eq("day", todayStr()),
+      supabase.from("product_hidden").select("product_id, time").eq("day", todayStr()),
       supabase.from("critical_product_holidays").select("product_id, day").gte("day", todayStr()),
       supabase.from("product_notes").select("product_id, time, arch, note"),
     ]);
@@ -63,6 +73,9 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
 
     if (doneRes.error) console.error("Error fetching product_done:", doneRes.error);
     else setDoneKeys(new Set((doneRes.data ?? []).map((d: any) => doneKey(d.product_id, d.time, d.arch === "4.0" ? "4.0" : "1.0"))));
+
+    if (hiddenRes.error) console.error("Error fetching product_hidden:", hiddenRes.error);
+    else setHiddenKeys(new Set((hiddenRes.data ?? []).map((h: any) => hiddenKey(h.product_id, h.time))));
 
     if (holRes.error) console.error("Error fetching critical_product_holidays:", holRes.error);
     else {
@@ -136,6 +149,36 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
     if (error) console.error("Error unmarking done", error);
   };
 
+  // Oculta las corridas futuras de un producto por hoy (declutter). Una fila por horario.
+  const hideFutureRuns = async (productId: string, times: string[]) => {
+    if (times.length === 0) return;
+    setHiddenKeys((prev) => {
+      const next = new Set(prev);
+      for (const t of times) next.add(hiddenKey(productId, t)); // optimista
+      return next;
+    });
+    const rows = times.map((time) => ({ product_id: productId, time, day: todayStr() }));
+    const { error } = await supabase.from("product_hidden").insert(rows);
+    // 23505 = unique_violation → ya oculto por otra persona; no es error real.
+    if (error && (error as any).code !== "23505") console.error("Error hiding runs", error);
+  };
+
+  // Deshace el ocultamiento: vuelve a mostrar todas las corridas ocultas del producto hoy.
+  const showRuns = async (productId: string) => {
+    setHiddenKeys((prev) => {
+      const next = new Set<string>();
+      const prefix = `${productId}|`;
+      for (const k of prev) if (!k.startsWith(prefix)) next.add(k);
+      return next;
+    });
+    const { error } = await supabase
+      .from("product_hidden")
+      .delete()
+      .eq("product_id", productId)
+      .eq("day", todayStr());
+    if (error) console.error("Error showing runs", error);
+  };
+
   // Reemplaza la programación de un feriado: borra las filas de esa fecha e inserta las nuevas.
   const setHolidayProducts = async (day: string, productIds: string[]) => {
     const { error: delError } = await supabase.from("critical_product_holidays").delete().eq("day", day);
@@ -170,7 +213,7 @@ export function CriticalProductsProvider({ children }: { children: ReactNode }) 
 
   return (
     <ProductsContext.Provider
-      value={{ products, doneKeys, holidayProductsByDay, notesByKey, isLoading, refresh, addProduct, updateProduct, removeProduct, markDone, unmarkDone, setHolidayProducts, setNote }}
+      value={{ products, doneKeys, hiddenKeys, holidayProductsByDay, notesByKey, isLoading, refresh, addProduct, updateProduct, removeProduct, markDone, unmarkDone, hideFutureRuns, showRuns, setHolidayProducts, setNote }}
     >
       {children}
     </ProductsContext.Provider>

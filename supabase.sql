@@ -193,6 +193,26 @@ SELECT cron.schedule(
     $$ DELETE FROM public.product_done WHERE day < current_date - 7 $$
 );
 
+-- Corridas futuras ocultas manualmente para "limpiar" el tablero. Una fila por
+-- (producto, horario, día): al finalizar un producto se ocultan sus horarios que
+-- todavía no llegaron. Es solo por hoy (se purga a 7 días) y compartida con el equipo.
+CREATE TABLE IF NOT EXISTS public.product_hidden (
+    id uuid DEFAULT uuid_generate_v4() PRIMARY KEY,
+    product_id uuid NOT NULL REFERENCES public.critical_products(id) ON DELETE CASCADE,
+    time text NOT NULL,
+    day date NOT NULL,
+    UNIQUE (product_id, time, day)
+);
+ALTER TABLE public.product_hidden ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Public select product_hidden" ON public.product_hidden FOR SELECT USING (true);
+CREATE POLICY "Public insert product_hidden" ON public.product_hidden FOR INSERT WITH CHECK (true);
+CREATE POLICY "Public delete product_hidden" ON public.product_hidden FOR DELETE USING (true);
+SELECT cron.schedule(
+    'purge-product-hidden',
+    '0 3 * * *',
+    $$ DELETE FROM public.product_hidden WHERE day < current_date - 7 $$
+);
+
 -- ============================================================================
 -- Gestión de Días Libres y Vacaciones
 -- ============================================================================
