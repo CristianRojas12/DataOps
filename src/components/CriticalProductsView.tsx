@@ -39,7 +39,7 @@ function NoteCell({ value, onSave }: { value: string; onSave: (note: string) => 
 }
 
 export function CriticalProductsView() {
-  const { products, doneKeys, holidayProductsByDay, notesByKey, isLoading, markDone, unmarkDone, removeProduct, setHolidayProducts, setNote } = useProductsContext();
+  const { products, doneKeys, hiddenKeys, holidayProductsByDay, notesByKey, isLoading, markDone, unmarkDone, hideFutureRuns, showRuns, removeProduct, setHolidayProducts, setNote } = useProductsContext();
   const { session, calendarDim } = useGuardContext();
   const isAdmin = session?.role === 'admin';
   const { productsAlertsEnabled, productsAlertVolume, productsAddModalOpen, setProductsAddModalOpen, productsShiftFilter } = useUiStore();
@@ -106,16 +106,26 @@ export function CriticalProductsView() {
   const cards = useMemo(() => {
     const list: { product: CriticalProduct; time: string }[] = [];
     for (const p of visibleProducts) {
-      for (const t of p.schedules ?? []) list.push({ product: p, time: t });
+      for (const t of p.schedules ?? []) {
+        if (hiddenKeys.has(`${p.id}|${t}`)) continue; // corrida oculta hoy: fuera del board
+        list.push({ product: p, time: t });
+      }
     }
     return list.sort((a, b) => a.time.localeCompare(b.time) || a.product.name.localeCompare(b.product.name));
-  }, [visibleProducts]);
+  }, [visibleProducts, hiddenKeys]);
 
   const cur = hm(now);
 
   // Arquitecturas presentes en un producto (carriles a renderizar, en orden).
   const lanesFor = (p: CriticalProduct): ProductArch[] =>
     ARCHITECTURES.filter((a) => (p.links ?? []).some((l) => archOf(l) === a));
+
+  // ¿Está completo un horario del producto? (todos sus carriles hechos). Sirve para no
+  // ofrecer ocultar corridas que ya están hechas.
+  const isTimeDone = (p: CriticalProduct, t: string): boolean => {
+    const lanes = lanesFor(p);
+    return lanes.length > 0 && lanes.every((a) => doneKeys.has(`${p.id}|${t}|${a}`));
+  };
 
   const openEdit = (p: CriticalProduct) => { setEditing(p); setProductsAddModalOpen(true); };
 
@@ -182,6 +192,11 @@ export function CriticalProductsView() {
                     if (!doneKeys.has(`${cardKey}|${a}`)) markDone(p.id, time, a);
                   }
                 };
+                // Corridas futuras del producto que se pueden ocultar (aún no llegaron ni están hechas).
+                const futureTimes = (p.schedules ?? []).filter(
+                  (t) => t > cur && !hiddenKeys.has(`${p.id}|${t}`) && !isTimeDone(p, t),
+                );
+                const hiddenCount = (p.schedules ?? []).filter((t) => hiddenKeys.has(`${p.id}|${t}`)).length;
                 return (
                   <div key={cardKey} className="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-[#1a1c29] shadow-sm overflow-hidden">
                     {/* Encabezado de la tarjeta */}
@@ -200,13 +215,37 @@ export function CriticalProductsView() {
                           </span>
                         )}
                       </div>
-                      {allDone ? (
-                        <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400 shrink-0">✓ Completo</span>
-                      ) : (
-                        <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900 shrink-0" onClick={completeAll}>
-                          ✓ {lanes.length > 1 ? "Completar ambos" : "Completar"}
-                        </Button>
-                      )}
+                      <div className="flex items-center gap-2 shrink-0">
+                        {hiddenCount > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800 text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-[#1f2233]"
+                            title="Volver a mostrar las corridas ocultas"
+                            onClick={() => showRuns(p.id)}
+                          >
+                            ↩ Mostrar próximas ({hiddenCount})
+                          </Button>
+                        )}
+                        {allDone && futureTimes.length > 0 && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-8 bg-white dark:bg-[#1a1c29] border border-gray-300 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-[#1f2233]"
+                            title="Ocultar las corridas futuras de este producto por hoy"
+                            onClick={() => hideFutureRuns(p.id, futureTimes)}
+                          >
+                            🧹 Ocultar próximas ({futureTimes.length})
+                          </Button>
+                        )}
+                        {allDone ? (
+                          <span className="text-sm font-medium text-emerald-600 dark:text-emerald-400">✓ Completo</span>
+                        ) : (
+                          <Button size="sm" className="h-8 bg-amber-400 hover:bg-amber-500 text-gray-900" onClick={completeAll}>
+                            ✓ {lanes.length > 1 ? "Completar ambos" : "Completar"}
+                          </Button>
+                        )}
+                      </div>
                     </div>
 
                     {/* Carriles por arquitectura */}

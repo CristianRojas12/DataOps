@@ -31,13 +31,16 @@ function saveNotified(set: Set<string>): void {
  * Dispara una notificación del navegador AGRUPADA por horario (sin sonido),
  * deduplicada por navegador/día vía localStorage. Portado de la versión vanilla.
  */
-export function useProductNotifications(products: CriticalProduct[], enabled: boolean, volume = 0.6) {
+export function useProductNotifications(products: CriticalProduct[], enabled: boolean, volume = 0.6, hiddenKeys: Set<string> = new Set()) {
   const productsRef = useRef(products);
   productsRef.current = products;
   const enabledRef = useRef(enabled);
   enabledRef.current = enabled;
   const volumeRef = useRef(volume);
   volumeRef.current = volume;
+  // Corridas ocultas manualmente (productId|HH:MM): no deben sonar ni notificar.
+  const hiddenKeysRef = useRef(hiddenKeys);
+  hiddenKeysRef.current = hiddenKeys;
   // Minuto del último chequeo. Permite detectar horarios "cruzados" aunque el
   // timer se haya retrasado en segundo plano (en vez de exigir el minuto exacto).
   const lastMinRef = useRef<number>(-1);
@@ -81,6 +84,8 @@ export function useProductNotifications(products: CriticalProduct[], enabled: bo
         if (!(p.days ?? [1, 2, 3, 4, 5]).includes(dow)) continue;
         for (const t of p.schedules ?? []) {
           if (notified.has(t)) continue;
+          if (hiddenKeysRef.current.has(`${p.id}|${t}`)) continue; // corrida oculta hoy
+
           const tMin = hmToMinutes(t);
           // (lo, hi]; si cruzó medianoche (hi < lo) el rango "envuelve".
           const inRange = hi >= lo ? tMin > lo && tMin <= hi : tMin > lo || tMin <= hi;
